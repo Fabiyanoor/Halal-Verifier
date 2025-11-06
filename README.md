@@ -24,7 +24,7 @@ Halal-Verifier provides both a **.NET library** and a **RESTful API** to verify 
 | **Model** | Immutable data contracts used across all projects |
 | **Database** | Persistence-agnostic with EF Core; seedable via `DbInitializer` |
 | **BL** | Stateless verification service with injectable rule sets |
-| **ApiService** | Thin API layer exposing BL via Minimal APIs |
+| **ApiService** | Thin API layer exposing Business Logic via Minimal APIs |
 | **Web** | Optional SPA/SSR frontend using shared models |
 | **ServiceDefaults** | Cross-cutting concerns: logging, validation, CORS |
 
