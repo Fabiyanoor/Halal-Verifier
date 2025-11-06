@@ -1,0 +1,47 @@
+﻿<div class="@(showModal ? "fixed" : "hidden") inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="@(showModal ? "fixed" : "hidden") inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+
+        <!-- Modal panel -->
+        <div class="inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="flex items-start justify-between">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">@Title</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" @onclick="Close">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-2">
+                    @Body
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                @Footer
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public RenderFragment Title { get; set; }
+    [Parameter]
+    public RenderFragment Body { get; set; }
+    [Parameter]
+    public RenderFragment Footer { get; set; }
+    private bool showModal = false;
+
+    public void Open()
+    {
+        showModal = true;
+    }
+
+    public void Close()
+    {
+        showModal = false;
+    }
+}

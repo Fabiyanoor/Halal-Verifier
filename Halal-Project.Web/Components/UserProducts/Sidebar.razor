@@ -1,0 +1,80 @@
+﻿@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@using Authentication
+
+<div class="flex w-72 flex-col bg-blue-950 text-white shadow-xl">
+    <div class="p-6">
+        <h2 class="text-2xl font-semibold">Halal Evaluation</h2>
+        <p class="text-sm text-blue-200">Admin Panel</p>
+    </div>
+    <nav class="flex-1 px-4 py-6">
+        <ul class="space-y-3">
+            <li>
+                <button @onclick="NavigateToDashboard" class="w-full space-x-3 px-4 py-3 flex items-center rounded-lg hover:bg-blue-700 @(CurrentPage == "Dashboard" ? "bg-blue-800" : "")">
+                    <span>🏠</span><span class="font-medium">Dashboard</span>
+                </button>
+            </li>
+            <li>
+                <button @onclick="NavigateToPending" class="w-full space-x-3 px-4 py-3 flex items-center rounded-lg hover:bg-blue-700 @(CurrentPage == "Pending" ? "bg-blue-800" : "")">
+                    <span>📋</span><span class="font-medium">Create Requests</span>
+                </button>
+            </li>
+            <li>
+                <button @onclick="NavigateToCreateProduct" class="w-full space-x-3 px-4 py-3 flex items-center rounded-lg hover:bg-blue-700 @(CurrentPage == "CreateProduct" ? "bg-blue-800" : "")">
+                    <span>➕</span><span class="font-medium">My Requests</span>
+                </button>
+            </li>
+            <li>
+                <button @onclick="NavigateToProducts" class="w-full space-x-3 px-4 py-3 flex items-center rounded-lg hover:bg-blue-700 @(CurrentPage == "Products" ? "bg-blue-800" : "")">
+                    <span>📦</span><span class="font-medium">Show Products</span>
+                </button>
+            </li>
+        </ul>
+    </nav>
+    <div class="p-4">
+        <button @onclick="Logout" class="block w-full rounded-lg bg-blue-700 px-4 py-3 text-white hover:bg-blue-800">
+            Logout
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string CurrentPage { get; set; } = string.Empty;
+
+    private void NavigateToDashboard()
+    {
+        Navigation.NavigateTo("/user/dashboard");
+    }
+
+    private void NavigateToPending()
+    {
+        Navigation.NavigateTo("/user/create-request");
+    }
+
+    private void NavigateToCreateProduct()
+    {
+        Navigation.NavigateTo("/user/create-request");
+    }
+
+    private void NavigateToProducts()
+    {
+        Navigation.NavigateTo("/user/my-requests");
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            if (AuthStateProvider is CustomAuthStateProvider customAuth)
+            {
+                await customAuth.MarkUserAsLoggedOut();
+            }
+            Navigation.NavigateTo("/login");
+        }
+        catch (Exception)
+        {
+            // Handle error if needed
+        }
+    }
+}

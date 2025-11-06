@@ -1,0 +1,117 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Halal-Project.Web.bundle.scp.css",
+      "PackagePath": "staticwebassets\\Halal-Project.Web.a84yfhc5fb.bundle.scp.css"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Bacon Flavored Chips.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\Bacon Flavored Chips.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Cheese with Animal Rennet.jpg",
+      "PackagePath": "staticwebassets\\Assets\\Cheese with Animal Rennet.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Cheese.png",
+      "PackagePath": "staticwebassets\\Assets\\Cheese.png"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Cheeze.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\Cheeze.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Cocacola.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\Cocacola.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Forzenfood.jpg",
+      "PackagePath": "staticwebassets\\Assets\\Forzenfood.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Ingredeie.webp",
+      "PackagePath": "staticwebassets\\Assets\\Ingredeie.webp"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Jelly.jpg",
+      "PackagePath": "staticwebassets\\Assets\\Jelly.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Marshmallow.jpg",
+      "PackagePath": "staticwebassets\\Assets\\Marshmallow.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Products.webp",
+      "PackagePath": "staticwebassets\\Assets\\Products.webp"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Traditional Pork Pepperoni.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\Traditional Pork Pepperoni.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\Vegetable Oil.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\Vegetable Oil.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\drinks.jpg",
+      "PackagePath": "staticwebassets\\Assets\\drinks.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\f37db23b-2f6b-4093-9e4f-5ab8d0a17e2f_Marshmallow.jpg",
+      "PackagePath": "staticwebassets\\Assets\\f37db23b-2f6b-4093-9e4f-5ab8d0a17e2f_Marshmallow.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\googel logo.png",
+      "PackagePath": "staticwebassets\\Assets\\googel logo.png"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\hero.jpg",
+      "PackagePath": "staticwebassets\\Assets\\hero.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\placeholder.jpg",
+      "PackagePath": "staticwebassets\\Assets\\placeholder.jpg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\Assets\\snack1.jpeg",
+      "PackagePath": "staticwebassets\\Assets\\snack1.jpeg"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\css\\Tailwind.css",
+      "PackagePath": "staticwebassets\\css\\Tailwind.css"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\css\\output.css",
+      "PackagePath": "staticwebassets\\css\\output.css"
+    },
+    {
+      "Id": "C:\\Users\\HANAN\\OneDrive\\Desktop\\Project\\Halal-Project\\Halal-Project.Web\\wwwroot\\css\\tailwind.output.css",
+      "PackagePath": "staticwebassets\\css\\tailwind.output.css"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.Halal-Project.Web.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.Halal-Project.Web.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.build.Halal-Project.Web.props",
+      "PackagePath": "build\\Halal-Project.Web.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.buildMultiTargeting.Halal-Project.Web.props",
+      "PackagePath": "buildMultiTargeting\\Halal-Project.Web.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0\\staticwebassets\\msbuild.buildTransitive.Halal-Project.Web.props",
+      "PackagePath": "buildTransitive\\Halal-Project.Web.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

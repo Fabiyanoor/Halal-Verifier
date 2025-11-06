@@ -1,0 +1,539 @@
+﻿@page "/admin/product-requests"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+@inject ProtectedLocalStorage LocalStorage
+@inject ILogger<ShowRequests> Logger
+@using System.Text.Json
+@using Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using HalalProject.Model.Models
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+
+<div class="flex min-h-screen bg-gray-100">
+    <!-- Sidebar Component -->
+    <AdminSidebar />
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-md @(isSuccess ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline">Close</button>
+            </div>
+        }
+
+        <div class="rounded-xl bg-white p-6 shadow-md">
+            <h2 class="mb-6 text-2xl font-semibold text-blue-900">Product Change Requests</h2>
+
+            <!-- Search and Filter Bar -->
+            <div class="mb-8 bg-gray-50 p-4 rounded-lg">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- Search Input -->
+                    <div class="flex-1">
+                        <div class="relative">
+                            <input type="text"
+                                   @bind="searchQuery"
+                                   @bind:event="oninput"
+                                   placeholder="Search requests..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Status Filter -->
+                    <div class="w-full md:w-48">
+                        <select @bind="selectedStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <!-- Request Type Filter -->
+                    <div class="w-full md:w-48">
+                        <select @bind="selectedRequestType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">All Request Types</option>
+                            <option value="Add">Add</option>
+                            <option value="Edit">Edit</option>
+                            <option value="Delete">Delete</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Requests Table -->
+            @if (isLoading)
+            {
+                <div class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            }
+            else if (filteredRequests.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg">
+                        <thead>
+                            <tr class="bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3">Product Name</th>
+                                <th class="px-6 py-3">Request Type</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3">Requested By</th>
+                                <th class="px-6 py-3">Request Date</th>
+                                <th class="px-6 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var request in filteredRequests)
+                            {
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">@request.ProductName</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">@request.RequestType</td>
+                                    <td class="px-6 py-4">
+                                        <span class="@GetStatusColor(request.RequestStatus) text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                            @request.RequestStatus
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">@request.RequestedBy</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">@request.RequestDate.ToString("MMM dd, yyyy")</td>
+                                    <td class="px-6 py-4 text-sm font-medium space-x-2">
+                                        <button @onclick="() => ViewRequestDetails(request.RequestId)" class="text-blue-600 hover:text-blue-800">View</button>
+                                        @if (request.RequestStatus == "Pending")
+                                        {
+                                            <button @onclick="() => ApproveRequest(request.RequestId)" class="text-green-600 hover:text-green-800">Approve</button>
+                                            <button @onclick="() => RejectRequest(request.RequestId)" class="text-red-600 hover:text-red-800">Reject</button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="line" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No requests found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ProductChangeRequestDto> allRequests = new();
+    private List<ProductChangeRequestDto> filteredRequests = new();
+    private bool isLoading = true;
+    private string searchQuery = "";
+    private string selectedStatus = "";
+    private string selectedRequestType = "";
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("Initializing ShowRequests component.");
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+        if (!isAuthenticated)
+        {
+            Logger.LogWarning("Unauthenticated access attempt to admin product requests page.");
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (!authState.User.IsInRole("Admin"))
+        {
+            Logger.LogWarning("Non-admin user attempted to access admin product requests page.");
+            notificationMessage = "Access denied. Admin privileges required.";
+            isSuccess = false;
+            Navigation.NavigateTo("/unauthorized");
+            return;
+        }
+
+        Logger.LogInformation("User authenticated as {UserName} with Admin role.", authState.User.Identity.Name);
+        await ConfigureHttpClient();
+        await LoadRequests();
+        isLoading = false;
+    }
+
+    private async Task ConfigureHttpClient()
+    {
+        try
+        {
+            Logger.LogInformation("Configuring HttpClient with authorization header.");
+            var sessionResult = await LocalStorage.GetAsync<LoginResponseModel>("sessionState");
+            if (!sessionResult.Success || sessionResult.Value == null || string.IsNullOrEmpty(sessionResult.Value.Token))
+            {
+                Logger.LogWarning("No session state or token found in ProtectedLocalStorage.");
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(sessionResult.Value.Token))
+            {
+                Logger.LogWarning("Invalid JWT token format: {TokenPrefix}", sessionResult.Value.Token.Substring(0, Math.Min(20, sessionResult.Value.Token.Length)));
+                notificationMessage = "Invalid authentication token. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var jwtToken = handler.ReadJwtToken(sessionResult.Value.Token);
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "role" || c.Type == ClaimTypes.Role)?.Value;
+            var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+            Logger.LogInformation("Token claims - Role: {Role}, Expiration: {Exp}", roleClaim, expClaim);
+
+            if (string.IsNullOrEmpty(roleClaim) || roleClaim != "Admin")
+            {
+                Logger.LogWarning("Token lacks Admin role claim: {Role}", roleClaim);
+                notificationMessage = "Access denied. Admin role required.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            if (long.TryParse(expClaim, out var expUnix))
+            {
+                var expiration = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+                Logger.LogInformation("Token expiration: {Expiration}, Current time: {Now}", expiration, DateTimeOffset.UtcNow);
+                if (expiration < DateTimeOffset.UtcNow.AddMinutes(5))
+                {
+                    Logger.LogWarning("Token is expired or near expiry. Exp: {Exp}", expClaim);
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    notificationMessage = "Session expired. Please log in again.";
+                    isSuccess = false;
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+            }
+            else
+            {
+                Logger.LogWarning("Invalid expiration claim in token: {Exp}", expClaim);
+                notificationMessage = "Invalid token expiration. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Remove("Authorization");
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", sessionResult.Value.Token);
+            Logger.LogInformation("Authorization header set successfully.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error configuring HttpClient with authorization header.");
+            notificationMessage = "Failed to configure authentication. Please log in again.";
+            isSuccess = false;
+            await AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadRequests()
+    {
+        try
+        {
+            Logger.LogInformation("Attempting to fetch all product change requests from API.");
+            if (HttpClient.DefaultRequestHeaders.Authorization != null)
+            {
+                Logger.LogInformation("Authorization header present: {Scheme} {ParameterPrefix}...",
+                    HttpClient.DefaultRequestHeaders.Authorization.Scheme,
+                    HttpClient.DefaultRequestHeaders.Authorization.Parameter.Substring(0, Math.Min(20, HttpClient.DefaultRequestHeaders.Authorization.Parameter.Length)));
+            }
+            else
+            {
+                Logger.LogWarning("Authorization header missing before sending request.");
+                notificationMessage = "Authentication header missing. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var response = await HttpClient.GetAsync("https://localhost:7507/api/ProductChangeRequest/all");
+            Logger.LogInformation("API response status: {StatusCode}", response.StatusCode);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BaseResponseModel>();
+                if (result?.Success == true && result.Data != null)
+                {
+                    allRequests = ((JsonElement)result.Data).EnumerateArray()
+                        .Select(r => DeserializeRequest(r))
+                        .Where(r => r != null)
+                        .OrderByDescending(r => r.RequestDate)
+                        .ToList();
+                    Logger.LogInformation("Fetched {Count} requests.", allRequests.Count);
+                    FilterRequests();
+                }
+                else
+                {
+                    Logger.LogWarning("All requests API returned success=false or null data.");
+                    notificationMessage = "Failed to load requests.";
+                    isSuccess = false;
+                }
+            }
+            else
+            {
+                Logger.LogError("Failed to fetch all requests. Status: {StatusCode}", response.StatusCode);
+                notificationMessage = $"Failed to load requests: {response.StatusCode}";
+                isSuccess = false;
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    Logger.LogWarning("Unauthorized response from API. Redirecting to login.");
+                    notificationMessage = "Unauthorized access. Please log in again.";
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "HTTP error while fetching requests.");
+            notificationMessage = $"Network error: {ex.Message}";
+            isSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error while fetching requests: {Message}", ex.Message);
+            notificationMessage = $"Error loading requests: {ex.Message}";
+            isSuccess = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private ProductChangeRequestDto? DeserializeRequest(JsonElement element)
+    {
+        try
+        {
+            return new ProductChangeRequestDto
+            {
+                RequestId = element.GetProperty("requestId").GetGuid(),
+                RequestType = element.GetProperty("requestType").GetString(),
+                RequestStatus = element.GetProperty("requestStatus").GetString(),
+                RequestedBy = element.GetProperty("requestedBy").GetString(),
+                RequestDate = element.GetProperty("requestDate").GetDateTime(),
+                ProductName = element.GetProperty("productName").GetString() ?? "N/A",
+                ActionDate = element.TryGetProperty("actionDate", out var actionDate) && actionDate.ValueKind != JsonValueKind.Null
+                    ? actionDate.GetDateTime()
+                    : null
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deserializing request JSON: {Json}", element.GetRawText());
+            return null;
+        }
+    }
+
+    private void FilterRequests()
+    {
+        var query = searchQuery?.ToLower() ?? "";
+        filteredRequests = allRequests
+            .Where(r => string.IsNullOrEmpty(query) ||
+                        r.ProductName?.ToLower().Contains(query) == true ||
+                        r.RequestedBy?.ToLower().Contains(query) == true)
+            .Where(r => string.IsNullOrEmpty(selectedStatus) ||
+                        r.RequestStatus.Equals(selectedStatus, StringComparison.OrdinalIgnoreCase))
+            .Where(r => string.IsNullOrEmpty(selectedRequestType) ||
+                        r.RequestType.Equals(selectedRequestType, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-yellow-100 text-yellow-800",
+            "Approved" => "bg-green-100 text-green-800",
+            "Rejected" => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private void ViewRequestDetails(Guid requestId)
+    {
+        Logger.LogInformation("Navigating to request details for RequestId: {RequestId}", requestId);
+        Navigation.NavigateTo($"/admin/request-details/{requestId}");
+    }
+
+    private async Task ApproveRequest(Guid requestId)
+    {
+        if (!await ConfirmAction("approve this request"))
+        {
+            return;
+        }
+
+        try
+        {
+            Logger.LogInformation("Attempting navigation to approve request page for request: {RequestId}", requestId);
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            Logger.LogInformation("Auth state - Authenticated: {Authenticated}, Role: {Role}",
+                authState.User.Identity?.IsAuthenticated, authState.User.IsInRole("Admin"));
+
+            if (!authState.User.Identity?.IsAuthenticated == true || !authState.User.IsInRole("Admin"))
+            {
+                Logger.LogWarning("User not authenticated or not an admin. Redirecting to login.");
+                notificationMessage = "Please log in as an admin.";
+                isSuccess = false;
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            Navigation.NavigateTo($"/admin/approve-request/{requestId}", forceLoad: true);
+            Logger.LogInformation("Navigation to /admin/approve-request/{RequestId} triggered.", requestId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to navigate to approve request page for request {RequestId}", requestId);
+            notificationMessage = $"Error navigating to approval page: {ex.Message}";
+            isSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RejectRequest(Guid requestId)
+    {
+        if (!await ConfirmAction("reject this request"))
+        {
+            return;
+        }
+
+        try
+        {
+            Logger.LogInformation("Attempting to reject request: {RequestId}", requestId);
+            var content = new { Reason = "Rejected by admin" };
+            var response = await HttpClient.PostAsJsonAsync($"https://localhost:7507/api/ProductChangeRequest/reject/{requestId}", content);
+            var result = await response.Content.ReadFromJsonAsync<ProcessRequestResponse>();
+
+            if (response.IsSuccessStatusCode && result?.IsSuccess == true)
+            {
+                notificationMessage = "Request rejected successfully.";
+                isSuccess = true;
+                Logger.LogInformation("Request {RequestId} rejected successfully.", requestId);
+                await LoadRequests();
+            }
+            else
+            {
+                notificationMessage = $"Failed to reject request: {result?.Message ?? response.StatusCode.ToString()}";
+                isSuccess = false;
+                Logger.LogError("Failed to reject request {RequestId}: {Message}", requestId, result?.Message ?? response.StatusCode.ToString());
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    notificationMessage = "Unauthorized action. Please log in again.";
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error rejecting request {RequestId}", requestId);
+            notificationMessage = $"Error rejecting request: {ex.Message}";
+            isSuccess = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task<bool> ConfirmAction(string action)
+    {
+        // Placeholder for confirmation dialog
+        return await Task.FromResult(true);
+    }
+
+    private void ClearNotification()
+    {
+        notificationMessage = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    // Automatic filtering when search or filters change
+    private string _searchQuery = "";
+    private string SearchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            _searchQuery = value;
+            FilterRequests();
+        }
+    }
+
+    private string _selectedStatus = "";
+    private string SelectedStatus
+    {
+        get => _selectedStatus;
+        set
+        {
+            _selectedStatus = value;
+            FilterRequests();
+        }
+    }
+
+    private string _selectedRequestType = "";
+    private string SelectedRequestType
+    {
+        get => _selectedRequestType;
+        set
+        {
+            _selectedRequestType = value;
+            FilterRequests();
+        }
+    }
+
+    // Model classes
+    private class BaseResponseModel
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public object? Data { get; set; }
+    }
+
+    private class ProductChangeRequestDto
+    {
+        public Guid RequestId { get; set; }
+        public string? RequestType { get; set; }
+        public string? RequestStatus { get; set; }
+        public string? RequestedBy { get; set; }
+        public DateTime RequestDate { get; set; }
+        public DateTime? ActionDate { get; set; }
+        public string? ProductName { get; set; }
+    }
+
+    private class ProcessRequestResponse
+    {
+        public Guid RequestId { get; set; }
+        public bool IsSuccess { get; set; }
+        public string? Message { get; set; }
+        public ProductChangeRequestDto? Request { get; set; }
+        public object? Product { get; set; }
+        public List<object>? Ingredients { get; set; }
+    }
+
+    private class LoginResponseModel
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+}

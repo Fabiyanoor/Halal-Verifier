@@ -1,0 +1,13 @@
+wwwroot\Assets\drinks.jpg
+wwwroot\Assets\Forzenfood.jpg
+wwwroot\Assets\googel logo.png
+wwwroot\Assets\hero.jpg
+wwwroot\Assets\Ingredeie.webp
+wwwroot\Assets\Products.webp
+wwwroot\Assets\snack1.jpeg
+wwwroot\css\output.css
+wwwroot\css\Tailwind.css
+wwwroot\css\tailwind.output.css
+D:\Halal-Project\Halal-Project.Web\wwwroot\css\output.css
+D:\Halal-Project\Halal-Project.Web\wwwroot\css\Tailwind.css
+D:\Halal-Project\Halal-Project.Web\wwwroot\css\tailwind.output.css

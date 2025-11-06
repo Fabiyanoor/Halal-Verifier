@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Sdk Name="Aspire.AppHost.Sdk" Version="9.0.0" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>8624451a-bac3-4ce2-9e4a-b546de8c1593</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Halal-Project.ApiService\Halal-Project.ApiService.csproj" />
+    <ProjectReference Include="..\Halal-Project.Web\Halal-Project.Web.csproj" />
+    <ProjectReference Include="..\HalalProject.Database\HalalProject.Database.csproj" />
+    <ProjectReference Include="..\HalalProject.Model\HalalProject.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+    <PackageReference Include="EnvDTE" Version="17.14.40260" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
+  </ItemGroup>
+
+</Project>

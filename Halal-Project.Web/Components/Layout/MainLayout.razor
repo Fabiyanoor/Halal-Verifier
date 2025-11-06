@@ -1,0 +1,95 @@
+﻿@inherits LayoutComponentBase
+@using Authentication
+@using Blazored.Toast.Configuration
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Blazored.Toast
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject ProtectedLocalStorage LocalStorage
+@inject IToastService ToastService
+
+<div class="page">
+    @if (IsHomePage)
+    {
+        <div class="sidebar">
+            <NavMenu UserRoles="userRoles" />
+        </div>
+    }
+
+    <main>
+        <article class="content px-0 py-0">
+            @Body
+        </article>
+    </main>
+    <Footer/>
+</div>
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="10"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />
+
+
+@code {
+    private bool IsHomePage = true;
+    private List<string> userRoles = new List<string>();
+
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        CheckCurrentPage();
+        InitializeAuthentication();
+    }
+
+    private async void InitializeAuthentication()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity.IsAuthenticated)
+            {
+                userRoles = user.Claims
+                    .Where(c => c.Type == ClaimTypes.Role)
+                    .Select(c => c.Value)
+                    .ToList();
+
+                var sessionState = (await LocalStorage.GetAsync<LoginResponseModel>("sessionState")).Value;
+                if (sessionState == null || string.IsNullOrEmpty(sessionState.Token))
+                {
+                    await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+                    NavigationManager.NavigateTo("/login");
+                }
+            }
+        }
+        catch
+        {
+            await ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+            NavigationManager.NavigateTo("/login");
+        }
+    }
+
+    private void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        CheckCurrentPage();
+        StateHasChanged();
+    }
+
+    private void CheckCurrentPage()
+    {
+        var uri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        IsHomePage = string.IsNullOrEmpty(uri) || uri == "/";
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Ingredient: Salt: No E-code: Sodium chloride, a mineral used for flavouring and preservation: Halal\nIngredient: Wheat Flour: No E-code: Flour made from wheat grains: Halal\nIngredient: Cocoa Powder: No E-code: Powder made from cocoa solids: Halal\nIngredient: Wheat Starch: E1404: Starch derived from wheat: Halal\nIngredient: Glucose Syrup: E150a, E150b, E150c, E150d, E420, E471, E473, E475: A syrup made from the hydrolysis of starch, often corn or wheat: Mushbooh\nIngredient: Sugar: No E-code: Sucrose, a sweet crystalline carbohydrate: Halal\n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "avgLogprobs": -0.15481298247729341
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 100,
+    "candidatesTokenCount": 163,
+    "totalTokenCount": 263,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 100
+      }
+    ],
+    "candidatesTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 163
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.0-flash",
+  "responseId": "825EaNv_M5vL1PIPz8qYkA4"
+}

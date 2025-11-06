@@ -1,0 +1,543 @@
+﻿@page "/user/create-request"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject CustomAuthStateProvider AuthStateProvider
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@using Authentication
+@using Microsoft.AspNetCore.Components.Forms
+@using HalalProject.Model.DTO
+@using HalalProject.Model.Models
+
+<div class="flex min-h-screen bg-gray-100">
+    <Sidebar />
+    <div class="flex-1 overflow-y-auto p-8">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-md @(isSuccess ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline">Close</button>
+            </div>
+        }
+        <div class="rounded-xl bg-white p-6 shadow-md">
+            <h2 class="mb-6 text-2xl font-semibold text-blue-900">Create New Product Request</h2>
+            <EditForm Model="productCreateDto" OnValidSubmit="SubmitCreateRequest" OnInvalidSubmit="HandleInvalidSubmit" class="space-y-6">
+                <DataAnnotationsValidator />
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="mb-1 block text-sm font-medium text-blue-900">Product Name *</label>
+                            <InputText id="name" @bind-Value="productCreateDto.ProductName" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                            <ValidationMessage For="@(() => productCreateDto.ProductName)" class="text-red-500 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label for="category" class="mb-1 block text-sm font-medium text-blue-900">Category</label>
+                            <InputText id="category" @bind-Value="productCreateDto.Category" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                            <ValidationMessage For="@(() => productCreateDto.Category)" class="text-red-500 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label for="country" class="mb-1 block text-sm font-medium text-blue-900">Country *</label>
+                            <InputText id="country" @bind-Value="productCreateDto.Country" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                            <ValidationMessage For="@(() => productCreateDto.Country)" class="text-red-500 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label for="barcode" class="mb-1 block text-sm font-medium text-blue-900">Barcode</label>
+                            <InputText id="barcode" @bind-Value="productCreateDto.Barcode" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                            <ValidationMessage For="@(() => productCreateDto.Barcode)" class="text-red-500 text-sm mt-1" />
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="description" class="mb-1 block text-sm font-medium text-blue-900">Description</label>
+                            <InputTextArea id="description" @bind-Value="productCreateDto.Description" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" rows="5" />
+                            <ValidationMessage For="@(() => productCreateDto.Description)" class="text-red-500 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label for="image" class="mb-1 block text-sm font-medium text-blue-900">Product Image</label>
+                            <InputFile id="image" OnChange="OnFileChange" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                            @if (!string.IsNullOrEmpty(imagePreviewUrl))
+                            {
+                                <div class="mt-4 flex justify-center">
+                                    <img src="@imagePreviewUrl" alt="Image Preview" class="h-40 rounded-md object-cover" />
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(imageError))
+                            {
+                                <p class="mt-1 text-sm text-red-500">@imageError</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <div class="mt-4">
+                        <label for="ingredients" class="mb-1 block text-sm font-medium text-blue-900">Ingredients (Optional)</label>
+                        <InputTextArea id="ingredients" @bind-Value="ingredientsInput"
+                                       class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                                       rows="4" placeholder="Enter ingredients, one per line" />
+                    </div>
+                </div>
+                <div class="mt-4 bg-gray-100 p-4 rounded-md">
+                    <h3 class="text-sm font-medium text-blue-900">Debug Info</h3>
+                    <p>Product Name: @(string.IsNullOrEmpty(productCreateDto.ProductName) ? "Empty" : productCreateDto.ProductName)</p>
+                    <p>Category: @(string.IsNullOrEmpty(productCreateDto.Category) ? "Empty" : productCreateDto.Category)</p>
+                    <p>Country: @(string.IsNullOrEmpty(productCreateDto.Country) ? "Empty" : productCreateDto.Country)</p>
+                    <p>Barcode: @(string.IsNullOrEmpty(productCreateDto.Barcode) ? "Empty" : productCreateDto.Barcode)</p>
+                    <p>Description: @(string.IsNullOrEmpty(productCreateDto.Description) ? "Empty" : productCreateDto.Description)</p>
+                    <p>Ingredients Input: @(string.IsNullOrEmpty(ingredientsInput) ? "Empty" : ingredientsInput)</p>
+                    <p>Image Selected: @(imageBytes != null ? $"Yes (Type: {imageContentType}, Size: {imageBytes.Length})" : "No")</p>
+                    <p>Image Preview URL: @(string.IsNullOrEmpty(imagePreviewUrl) ? "None" : "Set")</p>
+                    <p>Form Valid: @(IsFormValid() ? "Yes" : "No")</p>
+                    <button type="button" @onclick="TestButtonClick" class="mt-2 rounded-lg bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">Test Button Click</button>
+                </div>
+                <div class="mt-8 flex space-x-4">
+                    <button type="submit" disabled="@isSubmitting"
+                            class="flex-1 rounded-lg bg-blue-700 px-6 py-3 text-white hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                        @if (isSubmitting)
+                        {
+                            <span>Submitting...</span>
+                        }
+                        else
+                        {
+                            <span>Submit Request</span>
+                        }
+                    </button>
+                    <button type="button" @onclick="NavigateToDashboard"
+                            class="flex-1 rounded-lg bg-gray-200 px-6 py-3 text-blue-900 hover:bg-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isSubmitting = false;
+    private string imagePreviewUrl = string.Empty;
+    private string imageError = string.Empty;
+    private string ingredientsInput = string.Empty;
+    private bool isAuthenticated = false;
+    private string? authToken = null;
+    private byte[]? imageBytes = null;
+    private string? imageContentType = null;
+    private string? imageFileName = null;
+
+    private class ProductCreateDto
+    {
+        [Required(ErrorMessage = "Product name is required")]
+        public string ProductName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Country is required")]
+        public string Country { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
+        public List<string>? Ingredients { get; set; }
+        public bool UseOnlyUserIngredients { get; set; } = false;
+    }
+
+    private class ValidationErrorResponse
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public Dictionary<string, string[]> Errors { get; set; } = new();
+        public string TraceId { get; set; } = string.Empty;
+    }
+
+    private class ProductRequestResponse
+    {
+        public bool IsSuccess { get; set; }
+        public string? Message { get; set; }
+        public Guid RequestId { get; set; }
+    }
+
+    private ProductCreateDto productCreateDto = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("OnInitializedAsync: Checking authentication");
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
+            {
+                Console.WriteLine("OnInitializedAsync: User not authenticated, redirecting to login");
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            authToken = await AuthStateProvider.GetTokenAsync();
+            if (string.IsNullOrEmpty(authToken))
+            {
+                Console.WriteLine("OnInitializedAsync: Authentication token missing");
+                notificationMessage = "Authentication token is missing. Please log in again.";
+                isSuccess = false;
+                NavigationManager.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OnInitializedAsync: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Initialization error: {ex.Message}";
+            isSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private void NavigateToDashboard()
+    {
+        try
+        {
+            Console.WriteLine("NavigateToDashboard: Redirecting to /user/dashboard");
+            NavigationManager.NavigateTo("/user/dashboard");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"NavigateToDashboard: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Navigation error: {ex.Message}";
+            isSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            Console.WriteLine($"OnFileChange: File selected: Name={e.File?.Name}, Size={e.File?.Size ?? 0} bytes, ContentType={e.File?.ContentType}");
+            imageError = string.Empty;
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg" };
+            const long maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (e.File == null)
+            {
+                Console.WriteLine("OnFileChange: No file selected");
+                imageError = "Please select an image file.";
+                imagePreviewUrl = string.Empty;
+                imageBytes = null;
+                imageContentType = null;
+                imageFileName = null;
+                StateHasChanged();
+                return;
+            }
+
+            if (!allowedTypes.Contains(e.File.ContentType))
+            {
+                Console.WriteLine($"OnFileChange: Invalid file type: {e.File.ContentType}");
+                imageError = "Only JPG, JPEG, and PNG files are allowed.";
+                imageBytes = null;
+                imagePreviewUrl = string.Empty;
+                imageContentType = null;
+                imageFileName = null;
+                StateHasChanged();
+                return;
+            }
+
+            if (e.File.Size > maxSize)
+            {
+                Console.WriteLine($"OnFileChange: File size exceeds 5MB: {e.File.Size} bytes");
+                imageError = "File size must not exceed 5MB.";
+                imageBytes = null;
+                imagePreviewUrl = string.Empty;
+                imageContentType = null;
+                imageFileName = null;
+                StateHasChanged();
+                return;
+            }
+
+            using var stream = e.File.OpenReadStream(maxSize);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            imageBytes = memoryStream.ToArray();
+            imageContentType = e.File.ContentType;
+            imageFileName = e.File.Name;
+            imagePreviewUrl = $"data:{imageContentType};base64,{Convert.ToBase64String(imageBytes)}";
+            Console.WriteLine("OnFileChange: Image processed successfully, stored in memory");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OnFileChange: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            imageError = $"Error processing image: {ex.Message}";
+            imageBytes = null;
+            imagePreviewUrl = string.Empty;
+            imageContentType = null;
+            imageFileName = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitCreateRequest()
+    {
+        try
+        {
+            Console.WriteLine($"SubmitCreateRequest: Form submission triggered, ProductName={productCreateDto.ProductName}, ImageSelected={(imageBytes != null ? $"Yes (Type: {imageContentType}, Size: {imageBytes.Length})" : "No")}");
+
+            if (string.IsNullOrWhiteSpace(productCreateDto.ProductName))
+            {
+                Console.WriteLine("SubmitCreateRequest: ProductName is empty");
+                notificationMessage = "Product name is required.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            List<string> ingredients = null;
+            if (!string.IsNullOrWhiteSpace(ingredientsInput))
+            {
+                ingredients = ingredientsInput
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(i => i.Trim())
+                    .Where(i => !string.IsNullOrEmpty(i))
+                    .ToList();
+                productCreateDto.Ingredients = ingredients.Any() ? ingredients : null;
+                Console.WriteLine($"SubmitCreateRequest: Ingredients count: {ingredients?.Count ?? 0}, Ingredients: {string.Join(", ", ingredients ?? new List<string>())}");
+            }
+
+            var validationContext = new ValidationContext(productCreateDto);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(productCreateDto, validationContext, validationResults, true);
+            Console.WriteLine($"SubmitCreateRequest: Form validation {(isValid ? "passed" : "failed")}");
+
+            if (!isValid)
+            {
+                var errorMessages = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+                Console.WriteLine($"SubmitCreateRequest: Validation errors: {errorMessages}");
+                notificationMessage = $"Form validation failed: {errorMessages}";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            using var formData = new MultipartFormDataContent();
+            formData.Add(new StringContent(productCreateDto.ProductName ?? string.Empty), "ProductName");
+            formData.Add(new StringContent(productCreateDto.Country ?? string.Empty), "Country");
+            if (!string.IsNullOrEmpty(productCreateDto.Category))
+            {
+                formData.Add(new StringContent(productCreateDto.Category), "Category");
+                Console.WriteLine($"FormData: Category: {productCreateDto.Category}");
+            }
+            if (!string.IsNullOrEmpty(productCreateDto.Description))
+            {
+                formData.Add(new StringContent(productCreateDto.Description), "Description");
+                Console.WriteLine($"FormData: Description: {productCreateDto.Description}");
+            }
+            if (!string.IsNullOrEmpty(productCreateDto.Barcode))
+            {
+                formData.Add(new StringContent(productCreateDto.Barcode), "Barcode");
+                Console.WriteLine($"FormData: Barcode: {productCreateDto.Barcode}");
+            }
+            formData.Add(new StringContent(productCreateDto.UseOnlyUserIngredients.ToString()), "UseOnlyUserIngredients");
+            Console.WriteLine($"FormData: UseOnlyUserIngredients: {productCreateDto.UseOnlyUserIngredients}");
+
+            if (productCreateDto.Ingredients?.Any() == true)
+            {
+                for (int i = 0; i < productCreateDto.Ingredients.Count; i++)
+                {
+                    formData.Add(new StringContent(productCreateDto.Ingredients[i]), $"Ingredients[{i}]");
+                    Console.WriteLine($"FormData: Ingredients[{i}]: {productCreateDto.Ingredients[i]}");
+                }
+            }
+
+            if (imageBytes != null && !string.IsNullOrEmpty(imageContentType) && !string.IsNullOrEmpty(imageFileName))
+            {
+                var streamContent = new StreamContent(new MemoryStream(imageBytes));
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(imageContentType);
+                formData.Add(streamContent, "Image", imageFileName);
+                Console.WriteLine($"FormData: Image added: Name={imageFileName}, ContentType={imageContentType}, Size={imageBytes.Length}");
+            }
+            else
+            {
+                Console.WriteLine("SubmitCreateRequest: No image selected for submission");
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://localhost:7507/api/ProductChangeRequest/create")
+            {
+                Content = formData
+            };
+
+            if (!string.IsNullOrEmpty(authToken))
+            {
+                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", authToken);
+                Console.WriteLine("SubmitCreateRequest: Authorization header added");
+            }
+            else
+            {
+                Console.WriteLine("SubmitCreateRequest: Authentication token missing");
+                notificationMessage = "Authentication token is missing. Please log in again.";
+                isSuccess = false;
+                NavigationManager.NavigateTo("/login");
+                StateHasChanged();
+                return;
+            }
+
+            isSubmitting = true;
+            StateHasChanged();
+            Console.WriteLine("SubmitCreateRequest: Sending POST request to /api/ProductChangeRequest/create");
+
+            var response = await HttpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"SubmitCreateRequest: Response status: {response.StatusCode}, Content: {responseContent}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = System.Text.Json.JsonSerializer.Deserialize<ProductRequestResponse>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (result?.IsSuccess == true)
+                {
+                    Console.WriteLine($"SubmitCreateRequest: Request submitted successfully, RequestId: {result.RequestId}");
+                    notificationMessage = "Product creation request submitted successfully!";
+                    isSuccess = true;
+                    productCreateDto = new(); // Reset form
+                    imagePreviewUrl = string.Empty;
+                    imageBytes = null;
+                    imageContentType = null;
+                    imageFileName = null;
+                    ingredientsInput = string.Empty;
+                    await Task.Delay(2000);
+                    NavigationManager.NavigateTo("/user/my-requests");
+                }
+                else
+                {
+                    Console.WriteLine($"SubmitCreateRequest: Request failed: {result?.Message}");
+                    notificationMessage = result?.Message ?? "Failed to submit product creation request.";
+                    isSuccess = false;
+                }
+            }
+            else
+            {
+                Console.WriteLine($"SubmitCreateRequest: API error: {response.StatusCode} - {responseContent}");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        var validationError = System.Text.Json.JsonSerializer.Deserialize<ValidationErrorResponse>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        var errorMessages = validationError?.Errors?.SelectMany(e => e.Value) ?? new string[] { "Unknown validation error" };
+                        notificationMessage = $"Validation failed: {string.Join(", ", errorMessages)}";
+                        Console.WriteLine($"Parsed validation errors: {string.Join(", ", errorMessages)}");
+                    }
+                    catch
+                    {
+                        notificationMessage = $"Server validation error: {responseContent}";
+                        Console.WriteLine($"SubmitCreateRequest: Failed to parse validation error: {responseContent}");
+                    }
+                    isSuccess = false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    notificationMessage = "Unauthorized access. Please log in again.";
+                    NavigationManager.NavigateTo("/login");
+                    isSuccess = false;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    notificationMessage = $"A request for '{productCreateDto.ProductName}' already exists.";
+                    isSuccess = false;
+                }
+                else
+                {
+                    notificationMessage = $"Server error: {response.StatusCode} - {responseContent}";
+                    isSuccess = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"SubmitCreateRequest: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Error submitting request: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+            Console.WriteLine("SubmitCreateRequest: Completed");
+        }
+    }
+
+    private async Task HandleInvalidSubmit()
+    {
+        try
+        {
+            Console.WriteLine("HandleInvalidSubmit: Form submission failed due to validation errors");
+            var validationErrors = new List<ValidationResult>();
+            var validationContext = new ValidationContext(productCreateDto);
+            Validator.TryValidateObject(productCreateDto, validationContext, validationErrors, true);
+
+            var errors = string.Join(", ", validationErrors.Select(r => r.ErrorMessage));
+            Console.WriteLine($"HandleInvalidSubmit: Errors: {errors}");
+            notificationMessage = string.IsNullOrEmpty(errors) ? "Form validation failed. Please check all fields." : $"Form validation failed: {errors}";
+            isSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"HandleInvalidSubmit: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Validation error: {ex.Message}";
+            isSuccess = false;
+        }
+        StateHasChanged();
+    }
+
+    private bool IsFormValid()
+    {
+        try
+        {
+            var validationContext = new ValidationContext(productCreateDto);
+            var validationResults = new List<ValidationResult>();
+            bool isValid = Validator.TryValidateObject(productCreateDto, validationContext, validationResults, true);
+            Console.WriteLine($"IsFormValid: Validation {(isValid ? "passed" : "failed")}");
+            if (!isValid)
+            {
+                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+                Console.WriteLine($"IsFormValid: Errors: {errors}");
+            }
+            return isValid;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"IsFormValid: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Validation check error: {ex.Message}";
+            isSuccess = false;
+            StateHasChanged();
+            return false;
+        }
+    }
+
+    private async Task TestButtonClick()
+    {
+        try
+        {
+            Console.WriteLine("TestButtonClick: Button click registered");
+            notificationMessage = "Test button clicked successfully!";
+            isSuccess = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"TestButtonClick: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Test button error: {ex.Message}";
+            isSuccess = false;
+        }
+        StateHasChanged();
+    }
+
+    private void ClearNotification()
+    {
+        try
+        {
+            Console.WriteLine("ClearNotification: Clearing notification");
+            notificationMessage = string.Empty;
+            isSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ClearNotification: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Ingredient: Wheat Flour: None: Cereal flour: Halal\nIngredient: Sugar: None: Sweetening agent: Halal\nIngredient: Vegetable Oil (Palm): None: Cooking oil: Mushbooh\nIngredient: Cocoa Powder: None: Cocoa solids: Halal\nIngredient: Glucose Syrup: None: Sweetener: Halal\nIngredient: Wheat Starch: None: Starch from wheat: Halal\nIngredient: Raising Agents (Sodium Bicarbonate E500, Ammonium Bicarbonate E503): E500, E503: Leavening agent: Halal\nIngredient: Salt: None: Seasoning: Halal\nIngredient: Emulsifier (Soy Lecithin E322): E322: Emulsifier: Mushbooh\nIngredient: Flavouring (Vanillin): None: Artificial flavour: Mushbooh\n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "avgLogprobs": -0.10325772023340415
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 105,
+    "candidatesTokenCount": 171,
+    "totalTokenCount": 276,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 105
+      }
+    ],
+    "candidatesTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 171
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.0-flash",
+  "responseId": "VmxEaOjuFfmUsbQPhumY4Q4"
+}

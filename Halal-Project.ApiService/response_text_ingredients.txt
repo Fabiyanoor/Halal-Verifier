@@ -1,0 +1,6 @@
+Ingredient: Salt: No E-code: Sodium chloride, a mineral used for flavouring and preservation: Halal
+Ingredient: Wheat Flour: No E-code: Flour made from wheat grains: Halal
+Ingredient: Cocoa Powder: No E-code: Powder made from cocoa solids: Halal
+Ingredient: Wheat Starch: E1404: Starch derived from wheat: Halal
+Ingredient: Glucose Syrup: E150a, E150b, E150c, E150d, E420, E471, E473, E475: A syrup made from the hydrolysis of starch, often corn or wheat: Mushbooh
+Ingredient: Sugar: No E-code: Sucrose, a sweet crystalline carbohydrate: Halal

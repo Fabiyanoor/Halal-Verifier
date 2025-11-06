@@ -1,0 +1,504 @@
+﻿@page "/admin/products"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+@using System.Text.Json
+@using Authentication
+
+<div class="flex min-h-screen bg-gray-100">
+    <!-- Sidebar Component -->
+    <AdminSidebar />
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-md @(isSuccess ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline">Close</button>
+            </div>
+        }
+
+        <div class="rounded-xl bg-white p-6 shadow-md">
+            <h2 class="mb-6 text-2xl font-semibold text-blue-900">Product List</h2>
+
+            <!-- Search and Filter Bar -->
+            <div class="mb-8 bg-gray-50 p-4 rounded-lg">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text"
+                               @bind="searchQuery"
+                               @oninput="HandleSearchInput"
+                               placeholder="Search products by name..."
+                               class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all duration-200 text-sm font-medium text-blue-900 placeholder-gray-700" />
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Status Filter -->
+                    <div class="relative">
+                        <select @bind="selectedStatus" @bind:after="HandleStatusChange" class="w-full pl-10 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all duration-300 text-sm font-medium text-blue-900 appearance-none">
+                            <option value="">All Statuses</option>
+                            <option value="Halal">Halal</option>
+                            <option value="Haram">Haram</option>
+                            <option value="Mushbooh">Mushbooh</option>
+                        </select>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Category Filter -->
+                    <div class="relative">
+                        <select @bind="selectedCategory" @bind:after="HandleCategoryChange" class="w-full pl-10 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all duration-300 text-sm font-medium text-blue-900 appearance-none">
+                            <option value="">All Categories</option>
+                            @foreach (var category in availableCategories)
+                            {
+                                <option value="@category">@category</option>
+                            }
+                        </select>
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Dialog -->
+            @if (showConfirmDialog)
+            {
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+                        <h3 class="text-lg font-semibold text-gray-900">Confirm Delete</h3>
+                        <p class="mt-2 text-sm text-gray-600">Are you sure you want to delete this product? This action cannot be undone.</p>
+                        <div class="mt-4 flex justify-end space-x-3">
+                            <button @onclick="CancelDelete" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
+                            <button @onclick="ConfirmDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Product Table -->
+            @if (isLoading)
+            {
+                <div class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            }
+            else if (filteredProducts.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg">
+                        <thead>
+                            <tr class="bg-gray-50 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-6 py-3">Image</th>
+                                <th class="px-6 py-3">Name</th>
+                                <th class="px-6 py-3">Category</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach (var product in filteredProducts)
+                            {
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        @if (!string.IsNullOrEmpty(product.ImageUrl) && product.ImageUrl != "string")
+                                        {
+                                            <img src="@NormalizeImageUrl(product.ImageUrl)" alt="@product.ProductName" class="h-12 w-12 object-cover rounded" onerror="this.src='/Assets/placeholder.jpg';" />
+                                        }
+                                        else
+                                        {
+                                            <div class="h-12 w-12 bg-gray-200 rounded flex items-center justify-center">
+                                                <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">@product.ProductName</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">@product.Category</td>
+                                    <td class="px-6 py-4">
+                                        <span class="@GetStatusColor(product.Status) text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                            @product.Status
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium space-x-2">
+                                        <button @onclick="() => ViewProductDetails(product.Id)" class="text-blue-600 hover:text-blue-800">View</button>
+                                        <button @onclick="() => UpdateProductDetails(product.Id)" class="text-blue-600 hover\:text-green-800">Update</button>
+
+                                        <button @onclick="() => InitiateDelete(product.Id)" class="text-red-600 hover:text-red-800">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.25rem;
+    }
+</style>
+
+@code {
+    private List<ProductDto> filteredProducts = new();
+    private List<ProductDto> cachedProducts = new();
+    private List<string> availableCategories = new();
+    private bool isLoading = true;
+    private bool isFetching = false;
+    private string searchQuery = "";
+    private string selectedStatus = "";
+    private string selectedCategory = "";
+    private string lastFilterHash = "";
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isAuthenticated = false;
+    private bool showConfirmDialog = false;
+    private Guid productToDelete;
+    private CancellationTokenSource pollingCts = new();
+    private CancellationTokenSource debounceCts = new();
+    private const string BackendBaseUrl = "https://localhost:7507";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine("OnInitializedAsync: Loading categories and products");
+            await LoadCategories();
+            await LoadProducts(false);
+            _ = StartPolling();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OnInitializedAsync: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Error loading products: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            Console.WriteLine("LoadCategories: Fetching categories from API");
+            var response = await HttpClient.GetFromJsonAsync<BaseResponseModel>($"{BackendBaseUrl}/api/Product/categories");
+            if (response?.Success == true && response.Data != null)
+            {
+                availableCategories = ((JsonElement)response.Data)
+                    .EnumerateArray()
+                    .Select(e => e.GetString())
+                    .Where(c => !string.IsNullOrEmpty(c))
+                    .OrderBy(c => c)
+                    .ToList();
+                Console.WriteLine($"LoadCategories: Loaded {availableCategories.Count} categories");
+            }
+            else
+            {
+                Console.WriteLine("LoadCategories: API response was unsuccessful or empty");
+                notificationMessage = "Failed to load categories.";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadCategories: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Error loading categories: {ex.Message}";
+            isSuccess = false;
+        }
+    }
+
+    private async Task LoadProducts(bool forceRefresh)
+    {
+        var filterHash = $"{searchQuery}|{selectedCategory}|{selectedStatus}";
+        if (!forceRefresh && filterHash == lastFilterHash && cachedProducts.Any())
+        {
+            Console.WriteLine("LoadProducts: Using cached products with local filtering");
+            filteredProducts = FilterProductsLocally(cachedProducts);
+            StateHasChanged();
+            return;
+        }
+
+        if (isFetching)
+        {
+            Console.WriteLine("LoadProducts: Already fetching, skipping");
+            return;
+        }
+
+        isFetching = true;
+        try
+        {
+            var url = $"{BackendBaseUrl}/api/Product";
+            Console.WriteLine($"LoadProducts: Fetching from {url}");
+
+            isLoading = true;
+            notificationMessage = string.Empty;
+            StateHasChanged();
+
+            var response = await HttpClient.GetFromJsonAsync<BaseResponseModel>(url, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            if (response == null)
+            {
+                Console.WriteLine("LoadProducts: Response is null");
+                notificationMessage = "No response from server. Please check your connection.";
+                isSuccess = false;
+                return;
+            }
+
+            if (response.Success && response.Data != null)
+            {
+                cachedProducts = ((JsonElement)response.Data).EnumerateArray()
+                    .Select(p =>
+                    {
+                        var product = new ProductDto
+                        {
+                            Id = p.GetProperty("id").GetGuid(),
+                            ProductName = p.GetProperty("productName").GetString() ?? "Unknown",
+                            Country = p.GetProperty("country").GetString() ?? "Unknown",
+                            Status = p.GetProperty("status").GetString() ?? "Unknown",
+                            ImageUrl = p.TryGetProperty("imageUrl", out var imageUrl) ? imageUrl.GetString() : null,
+                            Category = p.GetProperty("category").GetString() ?? "Unknown"
+                        };
+                        Console.WriteLine($"LoadProducts: Product {product.ProductName}, ImageUrl: {product.ImageUrl ?? "None"}");
+                        return product;
+                    })
+                    .ToList();
+
+                filteredProducts = FilterProductsLocally(cachedProducts);
+                lastFilterHash = filterHash;
+                Console.WriteLine($"LoadProducts: Loaded {cachedProducts.Count} products, filtered to {filteredProducts.Count}");
+            }
+            else
+            {
+                Console.WriteLine("LoadProducts: API response was unsuccessful or empty");
+                notificationMessage = response.ErrorMessage ?? "Failed to load products.";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadProducts: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Error loading products: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            isLoading = false;
+            isFetching = false;
+            StateHasChanged();
+        }
+    }
+
+    private List<ProductDto> FilterProductsLocally(List<ProductDto> products)
+    {
+        return products
+            .Where(p => string.IsNullOrEmpty(searchQuery) ||
+                        (p.ProductName?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Where(p => string.IsNullOrEmpty(selectedStatus) ||
+                        (p.Status?.Equals(selectedStatus, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Where(p => string.IsNullOrEmpty(selectedCategory) ||
+                        (p.Category?.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) ?? false))
+            .ToList();
+    }
+
+    private async Task StartPolling()
+    {
+        try
+        {
+            Console.WriteLine("StartPolling: Starting product polling");
+            while (!pollingCts.Token.IsCancellationRequested)
+            {
+                await LoadProducts(true);
+                await Task.Delay(10000, pollingCts.Token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("StartPolling: Polling cancelled");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"StartPolling: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            notificationMessage = $"Error polling products: {ex.Message}";
+            isSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        Console.WriteLine($"HandleSearchInput: Search query updated to '{searchQuery}'");
+        debounceCts.Cancel();
+        debounceCts = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(500, debounceCts.Token);
+            await LoadProducts(false);
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("HandleSearchInput: Debounce cancelled");
+        }
+    }
+
+    private async Task HandleStatusChange()
+    {
+        Console.WriteLine($"HandleStatusChange: Status updated to '{selectedStatus}'");
+        await LoadProducts(false);
+    }
+
+    private async Task HandleCategoryChange()
+    {
+        Console.WriteLine($"HandleCategoryChange: Category updated to '{selectedCategory}'");
+        await LoadProducts(false);
+    }
+
+    private string NormalizeImageUrl(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl) || imageUrl == "string")
+        {
+            Console.WriteLine("NormalizeImageUrl: Invalid or empty ImageUrl, using placeholder");
+            return $"{BackendBaseUrl}/Assets/placeholder.jpg";
+        }
+
+        if (imageUrl.StartsWith("/"))
+        {
+            var normalizedUrl = $"{BackendBaseUrl}{imageUrl}";
+            Console.WriteLine($"NormalizeImageUrl: Normalized {imageUrl} to {normalizedUrl}");
+            return normalizedUrl;
+        }
+
+        Console.WriteLine($"NormalizeImageUrl: Using {imageUrl} as is");
+        return imageUrl;
+    }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Halal" => "bg-green-100 text-green-800",
+            "Haram" => "bg-red-100 text-red-800",
+            "Mushbooh" => "bg-yellow-100 text-yellow-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private void ViewProductDetails(Guid productId)
+    {
+        Navigation.NavigateTo($"/product/{productId}");
+    }
+
+    private void UpdateProductDetails(Guid productId)
+    {
+        Console.WriteLine($"UpdateProductDetails: Navigating to update product with ID {productId}");
+        Navigation.NavigateTo($"/admin/update-product/{productId}");
+    }
+    private void InitiateDelete(Guid productId)
+    {
+        productToDelete = productId;
+        showConfirmDialog = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        showConfirmDialog = false;
+        try
+        {
+            var response = await HttpClient.DeleteAsync($"{BackendBaseUrl}/api/Product/{productToDelete}");
+            if (response.IsSuccessStatusCode)
+            {
+                notificationMessage = "Product deleted successfully.";
+                isSuccess = true;
+                await LoadProducts(true); // Refresh the product list
+            }
+            else
+            {
+                notificationMessage = $"Failed to delete product: {response.StatusCode}";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error deleting product: {ex.Message}";
+            isSuccess = false;
+        }
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        showConfirmDialog = false;
+        productToDelete = Guid.Empty;
+        StateHasChanged();
+    }
+
+    private void ClearNotification()
+    {
+        notificationMessage = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    // Model classes
+    private class BaseResponseModel
+    {
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+        public object Data { get; set; } = null!;
+    }
+
+    private class ProductDto
+    {
+        public Guid Id { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public string Category { get; set; } = string.Empty;
+    }
+}

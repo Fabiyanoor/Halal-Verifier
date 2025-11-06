@@ -1,0 +1,366 @@
+﻿@page "/user/request-details/{RequestId:guid}"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+@inject ProtectedLocalStorage LocalStorage
+@inject ILogger<Detail> Logger
+@using System.Text.Json
+@using Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using HalalProject.Model.Models
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+
+<div class="flex min-h-screen bg-gray-100">
+    <!-- User Sidebar -->
+    <UserSidebar />
+
+    <!-- Main Content -->
+    <div class="ml-64 flex-1 overflow-y-auto p-8">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-md @(isSuccess ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline">Close</button>
+            </div>
+        }
+
+        <div class="rounded-xl bg-white p-6 shadow-md">
+            <h2 class="mb-6 text-2xl font-semibold text-blue-900">Request Details</h2>
+
+            @if (isLoading)
+            {
+                <div class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            }
+            else if (request != null)
+            {
+                <div class="space-y-6">
+                    <!-- Request Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-900">Request Information</h3>
+                        <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Product Name</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.ProductName</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Request Type</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.RequestType</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Status</label>
+                                <p class="mt-1 text-sm">
+                                    <span class="@GetStatusColor(request.RequestStatus) text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                        @request.RequestStatus
+                                    </span>
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Request Date</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.RequestDate.ToString("MMM dd, yyyy")</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Requested By</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.RequestedBy</p>
+                            </div>
+                            @if (request.ActionDate.HasValue)
+                            {
+                                <div>
+                                    <label class="text-sm font-medium text-gray-500">Action Date</label>
+                                    <p class="mt-1 text-sm text-gray-900">@request.ActionDate.Value.ToString("MMM dd, yyyy")</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Product Details -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-900">Product Details</h3>
+                        <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Category</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.Category</p>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-500">Country</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.Country</p>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="text-sm font-medium text-gray-500">Description</label>
+                                <p class="mt-1 text-sm text-gray-900">@request.Description</p>
+                            </div>
+                            @if (!string.IsNullOrEmpty(request.Barcode))
+                            {
+                                <div>
+                                    <label class="text-sm font-medium text-gray-500">Barcode</label>
+                                    <p class="mt-1 text-sm text-gray-900">@request.Barcode</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Image -->
+                    @if (!string.IsNullOrEmpty(request.ImageUrl))
+                    {
+                        <div>
+                            <h3 class="text-lg font-semibold text-blue-900">Product Image</h3>
+                            <div class="mt-2">
+                                <img src="@request.ImageUrl" alt="@request.ProductName" class="h-48 rounded-md object-cover" onerror="this.src='/Assets/placeholder.jpg';" />
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Ingredients -->
+                    @if (request.Ingredients != null && request.Ingredients.Any())
+                    {
+                        <div>
+                            <h3 class="text-lg font-semibold text-blue-900">Ingredients</h3>
+                            <ul class="mt-2 space-y-2">
+                                @foreach (var ingredient in request.Ingredients)
+                                {
+                                    <li class="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                                        <span>@ingredient.Name</span>
+                                        <span class="@(ingredient.Status == "Halal" ? "text-green-600" : ingredient.Status == "Haram" ? "text-red-600" : "text-yellow-600") font-semibold">
+                                            @ingredient.Status
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <!-- Back Button -->
+                    <div class="mt-8">
+                        <button @onclick="NavigateBack" class="rounded-lg bg-blue-700 px-6 py-3 text-white hover:bg-blue-800">
+                            Back to Requests
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Request not found</h3>
+                    <p class="mt-1 text-sm text-gray-500">The requested product change request could not be found.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid RequestId { get; set; }
+
+    private ProductChangeRequestDetailsDto? request;
+    private bool isLoading = true;
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("Initializing UserRequestDetails for RequestId: {RequestId}", RequestId);
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.Identity?.IsAuthenticated == true)
+        {
+            Logger.LogWarning("Unauthenticated access attempt to request details page.");
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await ConfigureHttpClient();
+        await FetchRequestDetails();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfigureHttpClient()
+    {
+        try
+        {
+            Logger.LogInformation("Configuring HttpClient for UserRequestDetails.");
+            var sessionResult = await LocalStorage.GetAsync<LoginResponseModel>("sessionState");
+            if (!sessionResult.Success || sessionResult.Value == null || string.IsNullOrEmpty(sessionResult.Value.Token))
+            {
+                Logger.LogWarning("No session state or token found.");
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(sessionResult.Value.Token))
+            {
+                Logger.LogWarning("Invalid JWT token format.");
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var jwtToken = handler.ReadJwtToken(sessionResult.Value.Token);
+            var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+            if (long.TryParse(expClaim, out var expUnix) && DateTimeOffset.FromUnixTimeSeconds(expUnix) < DateTimeOffset.UtcNow.AddMinutes(5))
+            {
+                Logger.LogWarning("Token is expired.");
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", sessionResult.Value.Token);
+            Logger.LogInformation("HttpClient configured with Bearer token.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error configuring HttpClient.");
+            notificationMessage = "Failed to configure authentication. Please log in again.";
+            isSuccess = false;
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task FetchRequestDetails()
+    {
+        try
+        {
+            Logger.LogInformation("Fetching details for RequestId: {RequestId}", RequestId);
+            var response = await HttpClient.GetAsync($"https://localhost:7507/api/ProductChangeRequest/details/{RequestId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BaseResponseModel>();
+                if (result?.Success == true && result.Data != null)
+                {
+                    request = DeserializeRequestDetails((JsonElement)result.Data);
+                    Logger.LogInformation("Fetched request details for RequestId: {RequestId}", RequestId);
+                }
+                else
+                {
+                    Logger.LogWarning("Failed to fetch request details: success=false or null data.");
+                    notificationMessage = "Failed to load request details.";
+                    isSuccess = false;
+                }
+            }
+            else
+            {
+                Logger.LogError("Failed to fetch request details. Status: {StatusCode}", response.StatusCode);
+                notificationMessage = $"Failed to load request details: {response.StatusCode}";
+                isSuccess = false;
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    Logger.LogWarning("Unauthorized response from API. Redirecting to login.");
+                    notificationMessage = "Unauthorized access. Please log in again.";
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error fetching request details: {Message}", ex.Message);
+            notificationMessage = $"Error loading request details: {ex.Message}";
+            isSuccess = false;
+        }
+    }
+
+    private ProductChangeRequestDetailsDto? DeserializeRequestDetails(JsonElement element)
+    {
+        try
+        {
+            return new ProductChangeRequestDetailsDto
+            {
+                RequestId = element.GetProperty("requestId").GetGuid(),
+                RequestType = element.GetProperty("requestType").GetString(),
+                RequestStatus = element.GetProperty("requestStatus").GetString(),
+                RequestedBy = element.GetProperty("requestedBy").GetString(),
+                RequestDate = element.GetProperty("requestDate").GetDateTime(),
+                ProductName = element.GetProperty("productName").GetString() ?? "N/A",
+                Category = element.GetProperty("category").GetString(),
+                Country = element.GetProperty("country").GetString(),
+                Description = element.GetProperty("description").GetString(),
+                Barcode = element.TryGetProperty("barcode", out var barcode) ? barcode.GetString() : null,
+                ImageUrl = element.TryGetProperty("imageUrl", out var imageUrl) ? imageUrl.GetString() : null,
+                ActionDate = element.TryGetProperty("actionDate", out var actionDate) && actionDate.ValueKind != JsonValueKind.Null
+                    ? actionDate.GetDateTime()
+                    : null,
+                Ingredients = element.TryGetProperty("ingredients", out var ingredients) && ingredients.ValueKind == JsonValueKind.Array
+                    ? ingredients.EnumerateArray().Select(i => new IngredientDto
+                    {
+                        Name = i.GetProperty("name").GetString(),
+                        Status = i.GetProperty("status").GetString(),
+                        ECode = i.TryGetProperty("eCode", out var eCode) ? eCode.GetString() : "N/A",
+                        Description = i.TryGetProperty("description", out var desc) ? desc.GetString() : ""
+                    }).ToList()
+                    : new List<IngredientDto>()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error deserializing request details JSON: {Json}", element.GetRawText());
+            return null;
+        }
+    }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-yellow-100 text-yellow-800",
+            "Approved" => "bg-green-100 text-green-800",
+            "Rejected" => "bg-red-100 text-red-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo("/user/requests");
+    }
+
+    private void ClearNotification()
+    {
+        notificationMessage = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    // Model classes
+    private class BaseResponseModel
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public object? Data { get; set; }
+    }
+
+    private class ProductChangeRequestDetailsDto
+    {
+        public Guid RequestId { get; set; }
+        public string? RequestType { get; set; }
+        public string? RequestStatus { get; set; }
+        public string? RequestedBy { get; set; }
+        public DateTime RequestDate { get; set; }
+        public DateTime? ActionDate { get; set; }
+        public string? ProductName { get; set; }
+        public string? Category { get; set; }
+        public string? Country { get; set; }
+        public string? Description { get; set; }
+        public string? Barcode { get; set; }
+        public string? ImageUrl { get; set; }
+        public List<IngredientDto> Ingredients { get; set; } = new();
+    }
+
+    private class IngredientDto
+    {
+        public string? Name { get; set; }
+        public string? Status { get; set; }
+        public string? ECode { get; set; }
+        public string? Description { get; set; }
+    }
+
+    private class LoginResponseModel
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+}

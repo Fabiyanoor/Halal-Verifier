@@ -1,0 +1,446 @@
+﻿@page "/user/my-requests"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+@inject ProtectedLocalStorage LocalStorage
+@inject ILogger<UserPanel> Logger
+@using System.Text.Json
+@using Authentication
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.IdentityModel.Tokens.Jwt
+@using System.Security.Claims
+
+<div class="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <!-- Sidebar Component -->
+    <Sidebar />
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-6 md:p-10">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-lg @(isSuccess ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200") transition-all duration-300">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline focus:outline-none">Close</button>
+            </div>
+        }
+
+        <div class="rounded-2xl bg-white p-6 md:p-8 shadow-xl border border-gray-100">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-blue-900 tracking-tight">My Product Requests</h2>
+                <button @onclick="NavigateToCreateRequest" class="rounded-lg bg-blue-600 text-white px-5 py-2.5 hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Request
+                </button>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="flex justify-center items-center h-64">
+                    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+                </div>
+            }
+            else if (requests.Any())
+            {
+                @if (selectedRequest == null)
+                {
+                    <!-- List of Requests -->
+                    <div class="grid gap-4">
+                        @foreach (var request in requests)
+                        {
+                            <div class="bg-gray-50 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer" @onclick="() => ShowRequestDetails(request)">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-blue-900">@request.ProductName</h3>
+                                        <p class="text-sm text-gray-600">Request Type: @request.RequestType</p>
+                                        <p class="text-sm text-gray-600">Status: <span class="@GetStatusColor(request.RequestStatus)">@request.RequestStatus</span></p>
+                                        <p class="text-sm text-gray-600">Submitted: @(request.RequestDate?.ToString("MMM dd, yyyy") ?? "Not specified")</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button @onclick:stopPropagation="true" @onclick="() => ShowRequestDetails(request)" class="text-blue-600 hover:underline">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <!-- Request Details -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-semibold text-blue-900">@selectedRequest.ProductName</h3>
+                        <button @onclick="ClearSelectedRequest" class="rounded-lg bg-blue-600 text-white px-5 py-2.5 hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Back to Requests
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Left Column: Image -->
+<!-- Left Column: Image -->
+<div class="lg:col-span-1">
+    <div class="relative rounded-xl overflow-hidden shadow-md bg-gray-100">
+        @{
+            var imageUrl = !string.IsNullOrEmpty(selectedRequest.ImageUrl) 
+                ? selectedRequest.ImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                    ? selectedRequest.ImageUrl
+                    : $"{apiBaseUrl}{selectedRequest.ImageUrl}"
+                : null;
+        }
+        @if (!string.IsNullOrEmpty(imageUrl))
+        {
+            <img src="@imageUrl" alt="@selectedRequest.ProductName" 
+                 class="w-full h-80 object-cover transition-transform duration-300 hover:scale-105" 
+                 onerror="this.onerror=null;this.src='/Assets/placeholder.jpg';" />
+        }
+        else
+        {
+            <div class="w-full h-80 flex items-center justify-center bg-gray-200">
+                <svg class="h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </div>
+        }
+    </div>
+</div>
+
+                        <!-- Right Column: Request Info and Ingredients -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <!-- Request Info -->
+                            <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
+                                <h3 class="text-xl font-semibold text-blue-900 mb-4">Request Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Product Name</label>
+                                        <p class="text-lg font-semibold text-gray-900">@selectedRequest.ProductName</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Request Type</label>
+                                        <p class="text-gray-700">@selectedRequest.RequestType</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Status</label>
+                                        <span class="@GetStatusColor(selectedRequest.RequestStatus) text-sm font-medium px-3 py-1 rounded-full">
+                                            @selectedRequest.RequestStatus
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Country</label>
+                                        <p class="text-gray-700">@selectedRequest.Country</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Category</label>
+                                        <p class="text-gray-700">@(string.IsNullOrEmpty(selectedRequest.Category) ? "N/A" : selectedRequest.Category)</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Barcode</label>
+                                        <p class="text-gray-700">@(string.IsNullOrEmpty(selectedRequest.Barcode) ? "N/A" : selectedRequest.Barcode)</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Submitted By</label>
+                                        <p class="text-gray-700">@selectedRequest.RequestedBy</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-blue-900">Submitted On</label>
+                                        <p class="text-gray-700">@(selectedRequest.RequestDate?.ToString("MMM dd, yyyy") ?? "Not specified")</p>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(selectedRequest.RejectionReason))
+                                    {
+                                        <div class="col-span-2">
+                                            <label class="text-sm font-medium text-blue-900">Rejection Reason</label>
+                                            <p class="text-red-600">@selectedRequest.RejectionReason</p>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-4">
+                                    <label class="text-sm font-medium text-blue-900">Description</label>
+                                    <p class="text-gray-700 mt-1 leading-relaxed">@(string.IsNullOrEmpty(selectedRequest.Description) ? "No description provided" : selectedRequest.Description)</p>
+                                </div>
+                            </div>
+
+                            <!-- Ingredients -->
+                            <div class="bg-gray-50 p-6 rounded-xl shadow-sm">
+                                <h3 class="text-xl font-semibold text-blue-900 mb-4">Ingredients</h3>
+                                @if (selectedRequest.Ingredients != null && selectedRequest.Ingredients.Any())
+                                {
+                                    <div class="grid gap-2">
+                                        @foreach (var ingredient in selectedRequest.Ingredients)
+                                        {
+                                            <div class="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                                                <span class="font-medium text-gray-900">@ingredient</span>
+                                                <span class="text-yellow-600 bg-yellow-100 font-semibold px-3 py-1 rounded-full text-sm">Pending Verification</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-gray-500 italic">No ingredients listed for this request.</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-16 bg-gray-50 rounded-xl">
+                    <svg class="mx-auto h-16 w-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="mt-4 text-lg font-medium text-gray-900">No Requests Found</h3>
+                    <p class="mt-2 text-sm text-gray-500">You have not submitted any product change requests yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<RequestDto> requests = new();
+    private RequestDto? selectedRequest;
+    private bool isLoading = true;
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isAuthenticated = false;
+    private readonly string apiBaseUrl = "https://localhost:7507";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+        if (!isAuthenticated)
+        {
+            Logger.LogWarning("Unauthenticated access attempt to my-requests page.");
+            notificationMessage = "Please log in to view your requests.";
+            isSuccess = false;
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        Logger.LogInformation("User authenticated as {UserName}.", authState.User.Identity?.Name ?? "Unknown");
+        await ConfigureHttpClient();
+        await LoadUserRequests();
+        isLoading = false;
+    }
+
+    private async Task ConfigureHttpClient()
+    {
+        try
+        {
+            var sessionResult = await LocalStorage.GetAsync<LoginResponseModel>("sessionState");
+            if (sessionResult.Success && sessionResult.Value != null && !string.IsNullOrEmpty(sessionResult.Value.Token))
+            {
+                var handler = new JwtSecurityTokenHandler();
+                if (handler.CanReadToken(sessionResult.Value.Token))
+                {
+                    var jwtToken = handler.ReadJwtToken(sessionResult.Value.Token);
+                    var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "role" || c.Type == ClaimTypes.Role)?.Value;
+                    var expClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+
+                    if (string.IsNullOrEmpty(roleClaim))
+                    {
+                        Logger.LogWarning("Token lacks role claim.");
+                        notificationMessage = "Invalid authentication token. Please log in again.";
+                        isSuccess = false;
+                        await AuthStateProvider.MarkUserAsLoggedOut();
+                        Navigation.NavigateTo("/login");
+                        return;
+                    }
+
+                    if (long.TryParse(expClaim, out var expUnix) && DateTimeOffset.FromUnixTimeSeconds(expUnix) < DateTimeOffset.UtcNow)
+                    {
+                        Logger.LogWarning("Token is expired. Exp: {Exp}", expClaim);
+                        await AuthStateProvider.MarkUserAsLoggedOut();
+                        notificationMessage = "Session expired. Please log in again.";
+                        isSuccess = false;
+                        Navigation.NavigateTo("/login");
+                        return;
+                    }
+
+                    HttpClient.DefaultRequestHeaders.Remove("Authorization");
+                    HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", sessionResult.Value.Token);
+                }
+                else
+                {
+                    Logger.LogWarning("Invalid JWT token format.");
+                    notificationMessage = "Invalid authentication token. Please log in again.";
+                    isSuccess = false;
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    Navigation.NavigateTo("/login");
+                }
+            }
+            else
+            {
+                Logger.LogWarning("No valid JWT token found in ProtectedLocalStorage.");
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error configuring HttpClient with authorization header.");
+            notificationMessage = "Failed to configure authentication. Please log in again.";
+            isSuccess = false;
+            await AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task LoadUserRequests()
+    {
+        try
+        {
+            Logger.LogInformation("Attempting to fetch user requests from API.");
+            
+            if (HttpClient.DefaultRequestHeaders.Authorization == null)
+            {
+                Logger.LogWarning("Authorization header missing before sending request.");
+                notificationMessage = "Authentication header missing. Please log in again.";
+                isSuccess = false;
+                await AuthStateProvider.MarkUserAsLoggedOut();
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            var response = await HttpClient.GetAsync($"{apiBaseUrl}/api/ProductChangeRequest/my-requests");
+            Logger.LogInformation("API response status: {StatusCode}", response.StatusCode);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BaseResponseModel>();
+                if (result?.Success == true && result.Data != null)
+                {
+                    requests = ((JsonElement)result.Data).EnumerateArray()
+                        .Select(item => new RequestDto
+                        {
+                            RequestId = item.TryGetProperty("requestId", out var reqId) ? reqId.GetGuid() : Guid.Empty,
+                            RequestType = item.TryGetProperty("requestType", out var reqType) ? reqType.GetString() : string.Empty,
+                            RequestStatus = item.TryGetProperty("requestStatus", out var reqStatus) ? reqStatus.GetString() : string.Empty,
+                            RequestedBy = item.TryGetProperty("requestedBy", out var reqBy) ? reqBy.GetString() : string.Empty,
+                            RequestDate = item.TryGetProperty("requestDate", out var reqDate) && reqDate.ValueKind != JsonValueKind.Null ? reqDate.GetDateTime() : null,
+                            ActionDate = item.TryGetProperty("actionDate", out var actDate) && actDate.ValueKind != JsonValueKind.Null ? actDate.GetDateTime() : null,
+                            ActionedBy = item.TryGetProperty("actionedBy", out var actBy) ? actBy.GetString() : null,
+                            RejectionReason = item.TryGetProperty("rejectionReason", out var rejReason) ? rejReason.GetString() : null,
+                            ProductName = item.TryGetProperty("productName", out var prodName) ? prodName.GetString() : string.Empty,
+                            Category = item.TryGetProperty("category", out var category) ? category.GetString() : null,
+                            Description = item.TryGetProperty("description", out var desc) ? desc.GetString() : null,
+                            ImageUrl = item.TryGetProperty("imageUrl", out var imgUrl) ? imgUrl.GetString() : null,
+                            Barcode = item.TryGetProperty("barcode", out var barcode) ? barcode.GetString() : null,
+                            Country = item.TryGetProperty("country", out var country) ? country.GetString() : string.Empty,
+                            UseOnlyUserIngredients = item.TryGetProperty("useOnlyUserIngredients", out var useOnly) && useOnly.ValueKind != JsonValueKind.Null ? useOnly.GetBoolean() : false,
+                            Ingredients = item.TryGetProperty("ingredients", out var ingredients) ? 
+                                ingredients.EnumerateArray().Select(i => i.GetString() ?? string.Empty).ToList() : 
+                                new List<string>(),
+                            ProductId = item.TryGetProperty("productId", out var prodId) && prodId.ValueKind != JsonValueKind.Null ? prodId.GetGuid() : null
+                        })
+                        .ToList();
+                }
+                else
+                {
+                    Logger.LogWarning("API returned success=false or null data.");
+                    notificationMessage = "Failed to load your requests.";
+                    isSuccess = false;
+                }
+            }
+            else
+            {
+                Logger.LogError("Failed to fetch user requests. Status: {StatusCode}", response.StatusCode);
+                notificationMessage = $"Failed to load requests: {response.StatusCode}";
+                isSuccess = false;
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    Logger.LogWarning("Unauthorized response from API. Redirecting to login.");
+                    notificationMessage = "Unauthorized access. Please log in again.";
+                    await AuthStateProvider.MarkUserAsLoggedOut();
+                    Navigation.NavigateTo("/login");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while fetching user requests.");
+            notificationMessage = $"Error loading requests: {ex.Message}";
+            isSuccess = false;
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void ShowRequestDetails(RequestDto request)
+    {
+        selectedRequest = request;
+        StateHasChanged();
+    }
+
+    private void ClearSelectedRequest()
+    {
+        selectedRequest = null;
+        StateHasChanged();
+    }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Approved" => "bg-green-100 text-green-800",
+            "Rejected" => "bg-red-100 text-red-800",
+            "Pending" => "bg-yellow-100 text-yellow-800",
+            _ => "bg-gray-100 text-gray-800"
+        };
+    }
+
+    private void NavigateToCreateRequest()
+    {
+        Navigation.NavigateTo("/create-request");
+    }
+
+    private void ClearNotification()
+    {
+        notificationMessage = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    private class BaseResponseModel
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public object? Data { get; set; }
+    }
+
+    private class RequestDto
+    {
+        public Guid RequestId { get; set; }
+        public string? RequestType { get; set; }
+        public string? RequestStatus { get; set; }
+        public string? RequestedBy { get; set; }
+        public DateTime? RequestDate { get; set; }
+        public DateTime? ActionDate { get; set; }
+        public string? ActionedBy { get; set; }
+        public string? RejectionReason { get; set; }
+        public string? ProductName { get; set; }
+        public string? Category { get; set; }
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? Barcode { get; set; }
+        public string? Country { get; set; }
+        public bool UseOnlyUserIngredients { get; set; }
+        public List<string> Ingredients { get; set; } = new();
+        public Guid? ProductId { get; set; }
+    }
+
+    private class LoginResponseModel
+    {
+        public string? Token { get; set; }
+    }
+}

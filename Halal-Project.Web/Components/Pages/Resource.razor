@@ -1,0 +1,135 @@
+﻿@page "/Resource"
+
+
+
+<header class="bg-blue-900 py-8 text-white">
+    <div class="container mx-auto text-center">
+        <h1 class="text-4xl font-extrabold">Halal Product Evaluation</h1>
+    </div>
+</header>
+<!-- FAQ Page Section -->
+<section class="bg-gray-50 py-16">
+    <div class="container mx-auto px-4 lg:px-20">
+        <h2 class="mb-10 text-center text-4xl font-bold text-blue-900">Frequently Asked Questions</h2>
+        <p class="mb-12 text-center text-gray-600">Find answers to some of the most common questions related to Halal Certification.</p>
+
+        <!-- FAQ List -->
+        <div class="space-y-8">
+            <!-- Question 1 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">What is Halal Certification?</h3>
+                <p class="mt-2 text-gray-600">
+                    Halal certification is a process that ensures food and non-food products comply with Islamic law. It guarantees that the product does not contain any prohibited ingredients or undergoes any process deemed haram (forbidden) in Islam.
+                </p>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Why is Halal Certification important?</h3>
+                <p class="mt-2 text-gray-600">
+                    Halal certification assures Muslim consumers that the product complies with Islamic dietary laws, promoting transparency and trust. It also helps businesses reach a wider market, especially in regions with a significant Muslim population.
+                </p>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">How do I apply for Halal Certification?</h3>
+                <p class="mt-2 text-gray-600">
+                    To apply for Halal certification, fill out the application form with details about your company and the products that require certification. After submitting, you will receive a proposal and proceed with payment and documentation as outlined in the certification process.
+                </p>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Is Halal certification only for food products?</h3>
+                <p class="mt-2 text-gray-600">
+                    No, Halal certification is not only for food products. It also applies to cosmetics, pharmaceuticals, cleaning products, and other non-food items that Muslims may use, ensuring they meet the necessary Halal standards.
+                </p>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">How long does the certification process take?</h3>
+                <p class="mt-2 text-gray-600">
+                    The certification process can take several weeks, depending on the complexity of the product, ingredient traceability, and the need for on-site audits. Generally, the process takes between 4 to 6 weeks after all necessary documents and fees are submitted.
+                </p>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Are there annual renewal fees for Halal Certification?</h3>
+                <p class="mt-2 text-gray-600">
+                    Yes, Halal certifications typically require annual renewal to ensure that products remain compliant with Halal standards. Renewal fees vary depending on the product type and the certification authority.
+                </p>
+            </div>
+
+            <!-- Question 7 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Can Halal Certification be revoked?</h3>
+                <p class="mt-2 text-gray-600">
+                    Yes, if a product or company fails to comply with Halal standards, the certification can be revoked. This could occur if ingredients change or if production processes no longer meet Halal requirements.
+                </p>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Are there different types of Halal certification?</h3>
+                <p class="mt-2 text-gray-600">
+                    Yes, there are various types of Halal certification based on the product category (food, cosmetics, pharmaceuticals, etc.) and the certification body. Different countries may have their own Halal certification authorities with specific standards.
+                </p>
+            </div>
+
+            <!-- Question 9 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Is the Halal certification globally recognized?</h3>
+                <p class="mt-2 text-gray-600">
+                    While Halal certification is recognized globally, the standards and processes may vary by country. However, products certified by reputable Halal authorities are widely accepted in the global market, especially in Muslim-majority regions.
+                </p>
+            </div>
+
+            <!-- Question 10 -->
+            <div class="rounded-lg bg-white p-6 shadow-md">
+                <h3 class="text-xl font-semibold text-blue-800">Can I use the Halal certification logo on my products?</h3>
+                <p class="mt-2 text-gray-600">
+                    Yes, after receiving Halal certification, you can use the Halal certification logo on your products and packaging, provided that you adhere to the terms and conditions specified by the certification body.
+                </p>
+            </div>
+        </div>
+
+        <!-- User Question Section -->
+        <div class="border-2 mt-16 rounded-lg border-blue-300 bg-white p-8 shadow-lg">
+            <h3 class="mb-6 text-3xl font-semibold text-blue-900">Got More Questions? We're Here to Help!</h3>
+            <p class="mb-4 text-gray-600">If you have additional questions or need further clarification about the Halal certification process, feel free to ask below. We’ll get back to you as soon as possible.</p>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="mb-4 hidden font-semibold text-green-700">
+                <p>Your question has been submitted successfully. We'll respond shortly!</p>
+            </div>
+
+            <!-- Question Form -->
+            <form id="questionForm" class="space-y-6" >
+                <div>
+                    <label for="name" class="block text-lg font-medium text-gray-700">Your Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your name" class="w-full rounded-lg border border-gray-300 bg-gray-100 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+
+                <div>
+                    <label for="email" class="block text-lg font-medium text-gray-700">Your Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" class="w-full rounded-lg border border-gray-300 bg-gray-100 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+
+                <div>
+                    <label for="question" class="block text-lg font-medium text-gray-700">Your Question</label>
+                    <textarea id="question" name="question" rows="6" placeholder="Type your question here" class="w-full rounded-lg border border-gray-300 bg-gray-100 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                </div>
+
+                <div class="flex justify-center">
+                    <button type="submit" class="rounded-lg bg-blue-900 px-8 py-3 font-semibold text-white transition-all duration-200 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-600">
+                        Submit Your Question
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</section>

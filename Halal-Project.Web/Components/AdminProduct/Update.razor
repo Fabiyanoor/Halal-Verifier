@@ -1,0 +1,1023 @@
+﻿```razor
+@page "/admin/update-product/{id}"
+@rendermode InteractiveServer
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@using Authentication
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+
+<div class="flex min-h-screen bg-gray-100">
+    <!-- Sidebar Component -->
+    <AdminSidebar />
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-y-auto p-8">
+        @if (!string.IsNullOrEmpty(notificationMessage))
+        {
+            <div class="mb-6 rounded-lg p-4 shadow-md @(isSuccess ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")">
+                @notificationMessage
+                <button @onclick="ClearNotification" class="ml-4 text-sm font-semibold hover:underline">Close</button>
+            </div>
+        }
+
+        @if (isLoading)
+        {
+            <div class="flex justify-center items-center h-64">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        }
+        else if (product == null)
+        {
+            <div class="rounded-xl bg-white p-6 shadow-md text-center">
+                <p class="text-red-500">Product not found</p>
+                <button @onclick="NavigateToProducts" class="mt-4 rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800">
+                    Back to Products
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="rounded-xl bg-white p-6 shadow-md">
+                <h2 class="mb-6 text-2xl font-semibold text-blue-900">Update Product</h2>
+                <EditForm Model="productUpdateDto" OnValidSubmit="SubmitUpdate" OnInvalidSubmit="HandleInvalidSubmit" class="space-y-6">
+                    <DataAnnotationsValidator />
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <!-- Left Column -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="name" class="mb-1 block text-sm font-medium text-blue-900">Product Name *</label>
+                                <InputText id="name" @bind-Value="productUpdateDto.ProductName" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                                <ValidationMessage For="@(() => productUpdateDto.ProductName)" class="text-red-500 text-sm mt-1" />
+                            </div>
+                            <div>
+                                <label for="category" class="mb-1 block text-sm font-medium text-blue-900">Category *</label>
+                                <InputText id="category" @bind-Value="productUpdateDto.Category" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                                <ValidationMessage For="@(() => productUpdateDto.Category)" class="text-red-500 text-sm mt-1" />
+                            </div>
+                            <div>
+                                <label for="country" class="mb-1 block text-sm font-medium text-blue-900">Country *</label>
+                                <InputText id="country" @bind-Value="productUpdateDto.Country" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                                <ValidationMessage For="@(() => productUpdateDto.Country)" class="text-red-500 text-sm mt-1" />
+                            </div>
+                            <div>
+                                <label for="barcode" class="mb-1 block text-sm font-medium text-blue-900">Barcode</label>
+                                <InputText id="barcode" @bind-Value="productUpdateDto.Barcode" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                                <ValidationMessage For="@(() => productUpdateDto.Barcode)" class="text-red-500 text-sm mt-1" />
+                            </div>
+                        </div>
+                        <!-- Right Column -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="description" class="mb-1 block text-sm font-medium text-blue-900">Description *</label>
+                                <InputTextArea id="description" @bind-Value="productUpdateDto.Description" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" rows="5" />
+                                <ValidationMessage For="@(() => productUpdateDto.Description)" class="text-red-500 text-sm mt-1" />
+                            </div>
+                            <div>
+                                <label for="image" class="mb-1 block text-sm font-medium text-blue-900">Product Image</label>
+                                <div class="flex items-center space-x-4">
+                                    @if (!string.IsNullOrEmpty(product.ImageUrl) && product.ImageUrl != "string")
+                                    {
+                                        <div class="flex-shrink-0">
+                                            <img src="@NormalizeImageUrl(product.ImageUrl)" alt="Current Product Image" class="h-20 w-20 rounded-md object-cover" onerror="this.src='/Assets/placeholder.jpg';" />
+                                        </div>
+                                    }
+                                    <InputFile id="image" OnChange="OnFileChange" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700" />
+                                </div>
+                                @if (!string.IsNullOrEmpty(imagePreviewUrl))
+                                {
+                                    <div class="mt-4 flex justify-center">
+                                        <img src="@imagePreviewUrl" alt="Image Preview" class="h-40 rounded-md object-cover" />
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(imageError))
+                                {
+                                    <p class="mt-1 text-sm text-red-500">@imageError</p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Ingredients Section -->
+                    <div class="mt-6">
+                        <div class="flex items-center space-x-4">
+                            <label for="useAI" class="text-sm font-medium text-blue-900">Fetch Ingredients with AI</label>
+                            <InputCheckbox id="useAI" @bind-Value="useAI" class="h-4 w-4 text-blue-700 focus:ring-blue-500 border-gray-300 rounded" />
+                            @if (useAI)
+                            {
+                                <button type="button" @onclick="FetchAIIngredients" disabled="@isFetchingAI"
+                                        class="rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                                    @if (isFetchingAI)
+                                    {
+                                        <span>Fetching...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Fetch Ingredients</span>
+                                    }
+                                </button>
+                            }
+                            <button type="button" @onclick="EvaluateIngredients" disabled="@isEvaluating"
+                                    class="rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                                @if (isEvaluating)
+                                {
+                                    <span>Evaluating...</span>
+                                }
+                                else
+                                {
+                                    <span>Evaluate Status</span>
+                                }
+                            </button>
+                        </div>
+                        <!-- Add Ingredient Input -->
+                        <div class="mt-4 flex items-end space-x-4">
+                            <div class="flex-1">
+                                <label for="newIngredient" class="mb-1 block text-sm font-medium text-blue-900">Add New Ingredient</label>
+                                <InputText id="newIngredient" @bind-Value="newIngredientInput"
+                                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                                           placeholder="Enter ingredient name" />
+                            </div>
+                            <button type="button" @onclick="AddIngredient"
+                                    class="rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                                Add Ingredient
+                            </button>
+                        </div>
+                        <!-- Ingredients Text Area -->
+                        <div class="mt-4">
+                            <label for="ingredients" class="mb-1 block text-sm font-medium text-blue-900">Ingredients</label>
+                            <InputTextArea id="ingredients" @bind-Value="ingredientsInput"
+                                           class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                                           rows="4" placeholder="Enter ingredients, one per line" />
+                            <ValidationMessage For="@(() => ingredientsValidator.IngredientsInput)" class="text-red-500 text-sm mt-1" />
+                            @if (string.IsNullOrEmpty(ingredientsInput) && !evaluatedIngredients.Any())
+                            {
+                                <p class="mt-2 text-sm text-gray-600">No ingredients available. Use AI to fetch or enter manually.</p>
+                            }
+                        </div>
+                        <!-- Evaluated Ingredients List -->
+                        @if (evaluatedIngredients.Any())
+                        {
+                            <div class="mt-4">
+                                <h3 class="text-sm font-medium text-blue-900">Evaluated Ingredients</h3>
+                                <ul class="mt-2 space-y-2">
+                                    @foreach (var ingredient in evaluatedIngredients)
+                                    {
+                                        <li class="flex justify-between items-center p-2 bg-gray-50 rounded-md">
+                                            <span>@(ingredient.Name ?? "Unknown")</span>
+                                            <div class="flex items-center space-x-4">
+                                                <span class="@(ingredient.Status == "Halal" ? "text-green-600" : ingredient.Status == "Haram" ? "text-red-600" : "text-yellow-600") font-semibold">
+                                                    @(ingredient.Status ?? "Unknown")
+                                                </span>
+                                                <button type="button" @onclick="() => RemoveIngredient(ingredient)"
+                                                        class="rounded-md bg-red-600 px-2 py-1 text-white text-sm hover:bg-red-700">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                    <!-- Product Status -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-blue-900">Calculated Product Status</label>
+                        <p class="mt-1 text-lg font-semibold @(calculatedStatus == "Halal" ? "text-green-600" : calculatedStatus == "Haram" ? "text-red-600" : calculatedStatus == "Mushbooh" ? "text-yellow-600" : "text-gray-600")">
+                            @(string.IsNullOrEmpty(calculatedStatus) ? product.Status : calculatedStatus)
+                        </p>
+                    </div>
+                    <!-- Submit Button -->
+                    <div class="mt-8 flex space-x-4">
+                        <button type="submit" disabled="@isSubmitting"
+                                class="flex-1 rounded-lg bg-blue-700 px-6 py-3 text-white hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed">
+                            @if (isSubmitting)
+                            {
+                                <span>Updating...</span>
+                            }
+                            else
+                            {
+                                <span>Update Product</span>
+                            }
+                        </button>
+                        <button type="button" @onclick="NavigateToProducts"
+                                class="flex-1 rounded-lg bg-gray-200 px-6 py-3 text-blue-900 hover:bg-gray-300">
+                            Cancel
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = string.Empty;
+
+    private string notificationMessage = string.Empty;
+    private bool isSuccess = false;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+    private bool useAI = false;
+    private bool isFetchingAI = false;
+    private bool isEvaluating = false;
+    private string imagePreviewUrl = string.Empty;
+    private string imageError = string.Empty;
+    private string ingredientsInput = string.Empty;
+    private string calculatedStatus = string.Empty;
+    private List<IngredientDto> evaluatedIngredients = new();
+    private bool isAuthenticated = false;
+    private string newIngredientInput = string.Empty; // New field for adding ingredients
+
+    private ProductResponse? product;
+    private ProductUpdateDto productUpdateDto = new();
+    private IngredientsInputValidator ingredientsValidator = new();
+    private const string BackendBaseUrl = "https://localhost:7507";
+
+    private class ProductUpdateDto
+    {
+        [Required(ErrorMessage = "Product name is required")]
+        public string ProductName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Category is required")]
+        public string Category { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Country is required")]
+        public string Country { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Description is required")]
+        public string Description { get; set; } = string.Empty;
+
+        public string Barcode { get; set; } = string.Empty;
+
+        public IBrowserFile? Image { get; set; }
+
+        public byte[]? ImageData { get; set; }
+
+        public string? ImageContentType { get; set; }
+
+        public bool UseAI { get; set; }
+
+        public List<string>? IngredientNames { get; set; } = new();
+    }
+
+    private class IngredientsInputValidator
+    {
+        public string IngredientsInput { get; set; } = string.Empty;
+    }
+
+    private class ProductResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public string Status { get; set; } = "Unknown";
+        public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
+        public List<IngredientDto> Ingredients { get; set; } = new(); // Keep for backward compatibility
+        public List<ProductIngredientDto> ProductIngredients { get; set; } = new(); // New property
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string AddedBy { get; set; } = string.Empty;
+        public string? VerifiedBy { get; set; }
+    }
+
+    private class ProductIngredientDto
+    {
+        public string ProductId { get; set; } = string.Empty;
+        public string IngredientId { get; set; } = string.Empty;
+        public IngredientDto? Ingredient { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    private class IngredientDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Status { get; set; } = "Mushbooh";
+        public string? ECode { get; set; } = "N/A";
+        public string? Description { get; set; } = string.Empty;
+    }
+
+    private class BaseResponseModel
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public object? Data { get; set; }
+    }
+
+    private class IngredientResponse
+    {
+        public List<IngredientDto> Ingredients { get; set; } = new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            await LoadProduct();
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Initialization error: {ex.Message}";
+            isSuccess = false;
+            isLoading = false;
+            Console.WriteLine($"OnInitializedAsync: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadProduct()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var token = await AuthStateProvider.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await HttpClient.GetAsync($"{BackendBaseUrl}/api/Product/{Id}");
+            response.EnsureSuccessStatusCode();
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"LoadProduct: Raw API response: {responseContent}");
+
+            var result = System.Text.Json.JsonSerializer.Deserialize<BaseResponseModel>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (result?.Success == true && result.Data != null)
+            {
+                product = System.Text.Json.JsonSerializer.Deserialize<ProductResponse>(
+                    System.Text.Json.JsonSerializer.Serialize(result.Data),
+                    new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                if (product != null)
+                {
+                    productUpdateDto = new ProductUpdateDto
+                    {
+                        ProductName = product.ProductName ?? string.Empty,
+                        Category = product.Category ?? string.Empty,
+                        Country = product.Country ?? string.Empty,
+                        Description = product.Description ?? string.Empty,
+                        Barcode = product.Barcode ?? string.Empty
+                    };
+
+                    Console.WriteLine($"LoadProduct: Product loaded - Name: {product.ProductName}, ProductIngredients Count: {(product.ProductIngredients?.Count ?? 0)}, Ingredients Count: {(product.Ingredients?.Count ?? 0)}");
+
+                    // Prefer ProductIngredients over Ingredients
+                    if (product.ProductIngredients != null && product.ProductIngredients.Any())
+                    {
+                        var ingredients = product.ProductIngredients
+                            .Where(pi => pi.Ingredient != null)
+                            .Select(pi => pi.Ingredient)
+                            .ToList();
+
+                        ingredientsInput = string.Join("\n", ingredients.Select(i => i.Name?.Trim() ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)));
+                        evaluatedIngredients = ingredients.Where(i => i != null).ToList();
+                        calculatedStatus = product.Status ?? "Unknown";
+
+                        Console.WriteLine($"LoadProduct: IngredientsInput: {ingredientsInput}");
+                        Console.WriteLine($"LoadProduct: EvaluatedIngredients: {System.Text.Json.JsonSerializer.Serialize(evaluatedIngredients)}");
+                    }
+                    else if (product.Ingredients != null && product.Ingredients.Any())
+                    {
+                        ingredientsInput = string.Join("\n", product.Ingredients.Select(i => i.Name?.Trim() ?? string.Empty).Where(name => !string.IsNullOrEmpty(name)));
+                        evaluatedIngredients = product.Ingredients.Where(i => i != null).ToList();
+                        calculatedStatus = product.Status ?? "Unknown";
+
+                        Console.WriteLine($"LoadProduct: IngredientsInput: {ingredientsInput}");
+                        Console.WriteLine($"LoadProduct: EvaluatedIngredients: {System.Text.Json.JsonSerializer.Serialize(evaluatedIngredients)}");
+                    }
+                    else
+                    {
+                        ingredientsInput = string.Empty;
+                        evaluatedIngredients = new List<IngredientDto>();
+                        calculatedStatus = product.Status ?? "Unknown";
+                        notificationMessage = "No ingredients found for this product.";
+                        isSuccess = false;
+                        Console.WriteLine("LoadProduct: No ingredients found in product response.");
+                    }
+                }
+                else
+                {
+                    notificationMessage = "Failed to parse product data.";
+                    isSuccess = false;
+                    Console.WriteLine("LoadProduct: Product deserialization returned null.");
+                }
+            }
+            else
+            {
+                notificationMessage = result?.ErrorMessage ?? "Failed to load product data.";
+                isSuccess = false;
+                Console.WriteLine($"LoadProduct: API response unsuccessful. Error: {result?.ErrorMessage}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            notificationMessage = $"Error loading product: {ex.Message} (Status: {ex.StatusCode})";
+            isSuccess = false;
+            Console.WriteLine($"LoadProduct: HttpRequestException: {ex.Message}, Status: {ex.StatusCode}, StackTrace: {ex.StackTrace}");
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            notificationMessage = $"Error parsing product data: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"LoadProduct: JsonException: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Unexpected error loading product: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"LoadProduct: Exception: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string NormalizeImageUrl(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl) || imageUrl == "string")
+        {
+            Console.WriteLine("NormalizeImageUrl: Invalid or empty ImageUrl, using placeholder");
+            return $"{BackendBaseUrl}/Assets/placeholder.jpg";
+        }
+
+        if (imageUrl.StartsWith("/"))
+        {
+            var normalizedUrl = $"{BackendBaseUrl}{imageUrl}";
+            Console.WriteLine($"NormalizeImageUrl: Normalized {imageUrl} to {normalizedUrl}");
+            return normalizedUrl;
+        }
+
+        Console.WriteLine($"NormalizeImageUrl: Using {imageUrl} as is");
+        return imageUrl;
+    }
+
+    private void NavigateToProducts()
+    {
+        Navigation.NavigateTo("/admin/products");
+    }
+
+    private async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            productUpdateDto.Image = e.File;
+            imageError = string.Empty;
+
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/jpg" };
+            const long maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (productUpdateDto.Image == null)
+            {
+                imageError = "Please select an image file.";
+                imagePreviewUrl = string.Empty;
+                productUpdateDto.ImageData = null;
+                productUpdateDto.ImageContentType = null;
+                StateHasChanged();
+                return;
+            }
+
+            if (!allowedTypes.Contains(productUpdateDto.Image.ContentType))
+            {
+                imageError = "Only JPG, JPEG, and PNG files are allowed.";
+                productUpdateDto.Image = null;
+                productUpdateDto.ImageData = null;
+                productUpdateDto.ImageContentType = null;
+                imagePreviewUrl = string.Empty;
+                StateHasChanged();
+                return;
+            }
+
+            if (productUpdateDto.Image.Size > maxSize)
+            {
+                imageError = "File size must not exceed 5MB.";
+                productUpdateDto.Image = null;
+                productUpdateDto.ImageData = null;
+                productUpdateDto.ImageContentType = null;
+                imagePreviewUrl = string.Empty;
+                StateHasChanged();
+                return;
+            }
+
+            var buffer = new byte[productUpdateDto.Image.Size];
+            await productUpdateDto.Image.OpenReadStream(maxSize).ReadAsync(buffer);
+            productUpdateDto.ImageData = buffer;
+            productUpdateDto.ImageContentType = productUpdateDto.Image.ContentType;
+
+            imagePreviewUrl = $"data:{productUpdateDto.Image.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        }
+        catch (Exception ex)
+        {
+            imageError = $"Error processing image: {ex.Message}";
+            productUpdateDto.Image = null;
+            productUpdateDto.ImageData = null;
+            productUpdateDto.ImageContentType = null;
+            imagePreviewUrl = string.Empty;
+            Console.WriteLine($"OnFileChange: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchAIIngredients()
+    {
+        try
+        {
+            if (!useAI)
+            {
+                notificationMessage = "Please check 'Fetch Ingredients with AI' to proceed.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(productUpdateDto.ProductName))
+            {
+                notificationMessage = "Product name is required to fetch ingredients.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            if (string.IsNullOrEmpty(productUpdateDto.Country))
+            {
+                notificationMessage = "Country is required to fetch ingredients.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            isFetchingAI = true;
+            StateHasChanged();
+
+            var request = new
+            {
+                productName = productUpdateDto.ProductName,
+                barcode = productUpdateDto.Barcode ?? string.Empty,
+                country = productUpdateDto.Country
+            };
+
+            var token = await AuthStateProvider.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                isFetchingAI = false;
+                StateHasChanged();
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await HttpClient.PostAsJsonAsync($"{BackendBaseUrl}/api/Ingredient/get-ingredients", request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+            {
+                notificationMessage = "Too many requests to AI service. Please try again later.";
+                isSuccess = false;
+                isFetchingAI = false;
+                StateHasChanged();
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<IngredientResponse>();
+
+            if (result?.Ingredients?.Any() == true)
+            {
+                ingredientsInput = string.Join("\n", result.Ingredients.Select(i => i.Name));
+                evaluatedIngredients = result.Ingredients;
+                CalculateProductStatus();
+                notificationMessage = "Ingredients fetched successfully.";
+                isSuccess = true;
+            }
+            else
+            {
+                notificationMessage = "No ingredients found.";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error fetching ingredients: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"FetchAIIngredients: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isFetchingAI = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EvaluateIngredients()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(ingredientsInput))
+            {
+                notificationMessage = "No ingredients to evaluate.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            isEvaluating = true;
+            StateHasChanged();
+
+            var country = !string.IsNullOrEmpty(productUpdateDto.Country) ? productUpdateDto.Country : "Unknown";
+
+            var request = new
+            {
+                Ingredients = ingredientsInput.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                                    .Select(i => i.Trim())
+                                    .Where(i => !string.IsNullOrEmpty(i))
+                                    .ToList(),
+                Country = country
+            };
+
+            var token = await AuthStateProvider.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                isEvaluating = false;
+                StateHasChanged();
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await HttpClient.PostAsJsonAsync($"{BackendBaseUrl}/api/Ingredient/evaluate-ingredients", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                notificationMessage = $"Error evaluating ingredients: {response.StatusCode} - {errorContent}";
+                isSuccess = false;
+                Console.WriteLine($"EvaluateIngredients: Error: Status {response.StatusCode}, Content: {errorContent}");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<IngredientResponse>();
+
+            if (result?.Ingredients?.Any() == true)
+            {
+                evaluatedIngredients = result.Ingredients;
+                CalculateProductStatus();
+                notificationMessage = "Ingredients evaluated successfully!";
+                isSuccess = true;
+            }
+            else
+            {
+                notificationMessage = "No evaluation results returned.";
+                isSuccess = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error evaluating ingredients: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"EvaluateIngredients: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isEvaluating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateProductStatus()
+    {
+        try
+        {
+            if (!evaluatedIngredients.Any())
+            {
+                calculatedStatus = product?.Status ?? "Unknown";
+                return;
+            }
+
+            if (evaluatedIngredients.Any(i => i.Status.Equals("Haram", StringComparison.OrdinalIgnoreCase)))
+            {
+                calculatedStatus = "Haram";
+            }
+            else if (evaluatedIngredients.Any(i => i.Status.Equals("Mushbooh", StringComparison.OrdinalIgnoreCase)))
+            {
+                calculatedStatus = "Mushbooh";
+            }
+            else if (evaluatedIngredients.All(i => i.Status.Equals("Halal", StringComparison.OrdinalIgnoreCase)))
+            {
+                calculatedStatus = "Halal";
+            }
+            else
+            {
+                calculatedStatus = "Unknown";
+            }
+        }
+        catch (Exception ex)
+        {
+            calculatedStatus = product?.Status ?? "Unknown";
+            notificationMessage = $"Error calculating status: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"CalculateProductStatus: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitUpdate()
+    {
+        try
+        {
+            productUpdateDto.UseAI = useAI;
+            productUpdateDto.IngredientNames = useAI ? null : evaluatedIngredients.Select(i => i.Name).ToList();
+
+            // Validate product fields
+            var productContext = new ValidationContext(productUpdateDto);
+            var validationResults = new List<ValidationResult>();
+            bool productValid = Validator.TryValidateObject(productUpdateDto, productContext, validationResults, true);
+
+            if (!productValid)
+            {
+                var errors = string.Join(", ", validationResults.Select(r => r.ErrorMessage));
+                notificationMessage = $"Form validation failed: {errors}";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Prepare multipart form data
+            var content = new MultipartFormDataContent();
+            content.Add(new StringContent(productUpdateDto.ProductName ?? string.Empty), "ProductName");
+            content.Add(new StringContent(productUpdateDto.Country ?? string.Empty), "Country");
+            content.Add(new StringContent(productUpdateDto.Description ?? string.Empty), "Description");
+            content.Add(new StringContent(productUpdateDto.Category ?? string.Empty), "Category");
+            content.Add(new StringContent(productUpdateDto.Barcode ?? string.Empty), "Barcode");
+            content.Add(new StringContent(productUpdateDto.UseAI.ToString().ToLower()), "UseAI");
+
+            // Add ingredients
+            if (!useAI && productUpdateDto.IngredientNames?.Any() == true)
+            {
+                foreach (var ingredient in productUpdateDto.IngredientNames)
+                {
+                    content.Add(new StringContent(ingredient), "IngredientNames");
+                }
+            }
+
+            // Add image if provided
+            if (productUpdateDto.ImageData != null && productUpdateDto.ImageContentType != null)
+            {
+                var fileContent = new ByteArrayContent(productUpdateDto.ImageData);
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(productUpdateDto.ImageContentType);
+                content.Add(fileContent, "Image", productUpdateDto.Image?.Name ?? "image.jpg");
+            }
+
+            isSubmitting = true;
+            StateHasChanged();
+
+            // Set authentication header
+            var token = await AuthStateProvider.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                notificationMessage = "Authentication token missing. Please log in again.";
+                isSuccess = false;
+                isSubmitting = false;
+                StateHasChanged();
+                return;
+            }
+
+            HttpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            // Send request with retry logic
+            HttpResponseMessage response = null;
+            int maxRetries = 3;
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    response = await HttpClient.PutAsync($"{BackendBaseUrl}/api/Product/{Id}", content);
+                    break;
+                }
+                catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable || ex.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+                {
+                    if (attempt == maxRetries)
+                    {
+                        throw;
+                    }
+                    await Task.Delay(1000 * attempt);
+                    Console.WriteLine($"SubmitUpdate: Retry attempt {attempt} after {ex.Message}");
+                }
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<BaseResponseModel>();
+                if (result?.Success == true)
+                {
+                    notificationMessage = "Product updated successfully!";
+                    isSuccess = true;
+                    await Task.Delay(2000);
+                    Navigation.NavigateTo("/admin/products");
+                }
+                else
+                {
+                    notificationMessage = result?.ErrorMessage ?? "Failed to update product.";
+                    isSuccess = false;
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                if (errorContent.Contains("duplicate key") || errorContent.Contains("ProductName") ||
+                    errorContent.Contains("already exists") || response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    notificationMessage = $"A product with the name '{productUpdateDto.ProductName}' already exists.";
+                }
+                else
+                {
+                    notificationMessage = $"Server error: {response.StatusCode} - {errorContent}";
+                }
+                isSuccess = false;
+                Console.WriteLine($"SubmitUpdate: Error: Status {response.StatusCode}, Content: {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error updating product: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"SubmitUpdate: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        try
+        {
+            var validationErrors = new List<ValidationResult>();
+            var productContext = new ValidationContext(productUpdateDto);
+            Validator.TryValidateObject(productUpdateDto, productContext, validationErrors, true);
+
+            var errors = string.Join(", ", validationErrors.Select(r => r.ErrorMessage));
+            notificationMessage = string.IsNullOrEmpty(errors) ? "Form validation failed. Please check all fields." : $"Form validation failed: {errors}";
+            isSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Validation error: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"HandleInvalidSubmit: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+        }
+        StateHasChanged();
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrEmpty(productUpdateDto.ProductName) &&
+               !string.IsNullOrEmpty(productUpdateDto.Category) &&
+               !string.IsNullOrEmpty(productUpdateDto.Country) &&
+               !string.IsNullOrEmpty(productUpdateDto.Description) &&
+               (useAI || (!useAI && evaluatedIngredients.Any()));
+    }
+
+    private void ClearNotification()
+    {
+        notificationMessage = string.Empty;
+        isSuccess = false;
+        StateHasChanged();
+    }
+
+    private void AddIngredient()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(newIngredientInput))
+            {
+                notificationMessage = "Please enter an ingredient name.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            var trimmedName = newIngredientInput.Trim();
+            if (evaluatedIngredients.Any(i => i.Name.Equals(trimmedName, StringComparison.OrdinalIgnoreCase)))
+            {
+                notificationMessage = $"Ingredient '{trimmedName}' already exists.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Add to ingredientsInput
+            if (!string.IsNullOrEmpty(ingredientsInput))
+            {
+                ingredientsInput += $"\n{trimmedName}";
+            }
+            else
+            {
+                ingredientsInput = trimmedName;
+            }
+
+            // Add to evaluatedIngredients
+            var newIngredient = new IngredientDto
+            {
+                Name = trimmedName,
+                Status = "Unknown" // Default status until evaluated
+            };
+            evaluatedIngredients.Add(newIngredient);
+
+            // Clear input and notify
+            newIngredientInput = string.Empty;
+            notificationMessage = $"Ingredient '{trimmedName}' added successfully.";
+            isSuccess = true;
+            Console.WriteLine($"AddIngredient: Added '{trimmedName}' to ingredients list.");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error adding ingredient: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"AddIngredient: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveIngredient(IngredientDto ingredient)
+    {
+        try
+        {
+            if (ingredient == null || string.IsNullOrEmpty(ingredient.Name))
+            {
+                notificationMessage = "Invalid ingredient selected.";
+                isSuccess = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Remove from evaluatedIngredients
+            evaluatedIngredients.Remove(ingredient);
+
+            // Update ingredientsInput
+            var ingredientNames = ingredientsInput
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(i => i.Trim())
+                .Where(i => !i.Equals(ingredient.Name, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            ingredientsInput = string.Join("\n", ingredientNames);
+
+            // Recalculate status
+            CalculateProductStatus();
+
+            // Notify
+            notificationMessage = $"Ingredient '{ingredient.Name}' removed successfully.";
+            isSuccess = true;
+            Console.WriteLine($"RemoveIngredient: Removed '{ingredient.Name}' from ingredients list.");
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            notificationMessage = $"Error removing ingredient: {ex.Message}";
+            isSuccess = false;
+            Console.WriteLine($"RemoveIngredient: Error: {ex.Message}, StackTrace: {ex.StackTrace}");
+            StateHasChanged();
+        }
+    }
+}
+```

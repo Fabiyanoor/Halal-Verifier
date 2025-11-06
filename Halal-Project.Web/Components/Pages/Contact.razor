@@ -1,0 +1,122 @@
+﻿@page "/Contact"
+
+
+<header class="bg-blue-900 py-8 text-white">
+        <div class="container mx-auto text-center">
+            <h2 class="mb-4 text-4xl font-extrabold">Contact Us</h2>        </div>
+    </header>
+<!-- Contact Us Section -->
+    <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mb-12 text-center">
+            <p class="mx-auto max-w-3xl text-lg text-gray-600">
+                We are here to help you make informed decisions about the halal status of products and ingredients.
+                At <span class="font-semibold text-blue-900">Halal Product Evaluation</span>, we value transparency and strive to offer the most accurate and timely information regarding halal food compliance.
+                Whether you have questions, suggestions, or need assistance, feel free to reach out to us.
+            </p>
+        </div>
+
+        <!-- Assistance Section -->
+        <div class="grid-cols-1 grid gap-12 md:grid-cols-2">
+            <div class="rounded-lg bg-blue-50 p-6 shadow-lg">
+                <h3 class="mb-4 text-3xl font-semibold text-blue-900">How Can We Assist You?</h3>
+                <ul class="list-disc space-y-2 pl-6 text-gray-700">
+                    <li>Information on halal certification for products or ingredients.</li>
+                    <li>Clarification on halal food evaluation criteria and methodologies.</li>
+                    <li>Support regarding the use of our platform and its features.</li>
+                    <li>General inquiries related to our services and offerings.</li>
+                </ul>
+                <p class="mt-4 text-lg text-gray-600">
+                    We are committed to providing you with clear and reliable guidance in your search for halal food products.
+                </p>
+            </div>
+
+            <div class="rounded-lg bg-blue-50 p-6 shadow-lg">
+                <h3 class="mb-4 text-3xl font-semibold text-blue-900">Get In Touch</h3>
+                <p class="text-lg text-gray-600">We offer several ways for you to contact us:</p>
+                
+                <!-- Contact Methods -->
+                <div class="mt-6 space-y-6">
+                    <div>
+                        <h4 class="text-xl font-medium text-blue-900">Email Us</h4>
+                        <p class="text-gray-700">For general inquiries or support, send us an email:</p>
+                        <p class="font-semibold text-blue-900"> supportyourwebsite].com</p>
+                        <p class="text-gray-600">We typically respond within 1-2 business days.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xl font-medium text-blue-900">Call Us</h4>
+                        <p class="text-gray-700">For direct assistance, call us at:</p>
+                        <p class="font-semibold text-blue-900">+1-800-123-4567</p>
+                        <p class="text-gray-600">Our customer support is available from 9:00 AM to 5:00 PM (Monday to Friday).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Form -->
+        <div class="mt-12 rounded-lg bg-white p-8 shadow-lg">
+            <h3 class="mb-6 text-3xl font-semibold text-blue-900">Contact Form</h3>
+            <p class="mb-6 text-lg text-gray-600">Alternatively, fill out the form below and we'll get back to you as soon as possible.</p>
+
+            <form action="#" method="POST" class="space-y-6">
+                <div>
+                    <label for="name" class="block text-lg font-medium text-gray-700">Name</label>
+                    <input type="text" id="name" name="name" required class="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-lg font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" name="email" required class="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900">
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-lg font-medium text-gray-700">Phone Number (optional)</label>
+                    <input type="text" id="phone" name="phone" class="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900">
+                </div>
+
+                <div>
+                    <label for="subject" class="block text-lg font-medium text-gray-700">Subject</label>
+                    <select id="subject" name="subject" class="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900">
+                        <option value="general_inquiry">General Inquiry</option>
+                        <option value="halal_certification">Halal Certification</option>
+                        <option value="platform_support">Platform Support</option>
+                        <option value="feedback">Feedback/Suggestions</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="message" class="block text-lg font-medium text-gray-700">Message</label>
+                    <textarea id="message" name="message" rows="4" required class="mt-2 block w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-blue-900"></textarea>
+                </div>
+
+                <div class="flex justify-center">
+                    <button type="submit" class="mt-4 rounded-md bg-blue-900 px-6 py-3 text-white transition-all hover:bg-blue-700">Submit</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Social Media Section -->
+        <div class="mt-12 text-center">
+            <h3 class="mb-4 text-3xl font-semibold text-blue-900">Follow Us</h3>
+            <p class="mb-6 text-lg text-gray-600">Stay connected with us through our social media channels for the latest updates:</p>
+            <div class="flex justify-center space-x-6">
+                <a href="#" class="text-blue-900 hover:text-blue-700">
+                    <i class="fab fa-facebook-f text-2xl"></i>
+                </a>
+                <a href="#" class="text-blue-900 hover:text-blue-700">
+                    <i class="fab fa-instagram text-2xl"></i>
+                </a>
+                <a href="#" class="text-blue-900 hover:text-blue-700">
+                    <i class="fab fa-twitter text-2xl"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Office Section -->
+        <div class="mt-12 text-center">
+            <h3 class="mb-4 text-3xl font-semibold text-blue-900">Visit Our Office</h3>
+            <p class="text-lg text-gray-600">If you'd like to meet with us in person, visit our office at:</p>
+            <p class="font-semibold text-blue-900">[Office Address]</p>
+            <p class="text-gray-600">[City, State, Zip Code]</p>
+        </div>
+    </section>

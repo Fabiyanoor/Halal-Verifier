@@ -1,0 +1,77 @@
+﻿@page "/Dashboard"
+
+<body class="bg-gray-100 font-sans">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 space-y-4 bg-blue-950 p-6 text-white">
+            <h2 class="text-2xl font-bold">Admin Panel</h2>
+            <nav class="space-y-2">
+                <a href="dsahboard.html" class="block rounded bg-blue-700 px-4 py-2">Dashboard</a>
+
+                <a href="/Userinfo" class="block rounded px-4 py-2 hover:bg-blue-700">Users</a>
+                <a href="/Add Product" class="block rounded px-4 py-2 hover:bg-blue-700">Add Product</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <h1 class="mb-4 text-2xl font-semibold">Dashboard</h1>
+
+            <!-- Metrics Overview -->
+            <div class="grid-cols-1 mb-6 grid gap-4 md:grid-cols-3">
+                <div class="flex justify-between rounded-lg bg-white p-6 shadow">
+                    <div>
+                        <h2 class="text-lg font-semibold">Total Users</h2>
+                        <p class="text-3xl font-bold">1,234</p>
+                    </div>
+                    <span class="text-4xl text-blue-500">👤</span>
+                </div>
+                <div class="flex justify-between rounded-lg bg-white p-6 shadow">
+                    <div>
+                        <h2 class="text-lg font-semibold">Total Ingredients</h2>
+                        <p class="text-3xl font-bold">567</p>
+                    </div>
+                    <span class="text-4xl text-green-500">🥦</span>
+                </div>
+                <div class="flex justify-between rounded-lg bg-white p-6 shadow">
+                    <div>
+                        <h2 class="text-lg font-semibold">Pending Reports</h2>
+                        <p class="text-3xl font-bold text-red-500">24</p>
+                    </div>
+                    <span class="text-4xl text-red-500">⚠️</span>
+                </div>
+            </div>
+
+            <!-- Recent Activity Table -->
+            <section class="rounded-lg bg-white p-6 shadow">
+                <h2 class="mb-4 text-xl font-semibold">Recent Activity</h2>
+                <table class="w-full border">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="p-2">User</th>
+                            <th class="p-2">Action</th>
+                            <th class="p-2">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-t">
+                            <td class="p-2">AdminUser</td>
+                            <td class="p-2 text-green-500">Approved Ingredient</td>
+                            <td class="p-2">5 mins ago</td>
+                        </tr>
+                        <tr class="border-t">
+                            <td class="p-2">JohnDoe</td>
+                            <td class="p-2 text-red-500">Deleted Product</td>
+                            <td class="p-2">10 mins ago</td>
+                        </tr>
+                        <tr class="border-t">
+                            <td class="p-2">JaneSmith</td>
+                            <td class="p-2 text-yellow-500">Updated Profile</td>
+                            <td class="p-2">15 mins ago</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+</body>

@@ -1,0 +1,10 @@
+Ingredient: Wheat Flour: None: Cereal flour: Halal
+Ingredient: Sugar: None: Sweetening agent: Halal
+Ingredient: Vegetable Oil (Palm): None: Cooking oil: Mushbooh
+Ingredient: Cocoa Powder: None: Cocoa solids: Halal
+Ingredient: Glucose Syrup: None: Sweetener: Halal
+Ingredient: Wheat Starch: None: Starch from wheat: Halal
+Ingredient: Raising Agents (Sodium Bicarbonate E500, Ammonium Bicarbonate E503): E500, E503: Leavening agent: Halal
+Ingredient: Salt: None: Seasoning: Halal
+Ingredient: Emulsifier (Soy Lecithin E322): E322: Emulsifier: Mushbooh
+Ingredient: Flavouring (Vanillin): None: Artificial flavour: Mushbooh

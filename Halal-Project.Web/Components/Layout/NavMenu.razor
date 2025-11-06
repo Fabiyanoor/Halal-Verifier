@@ -1,0 +1,187 @@
+﻿@page "/NavMenu"
+@rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Authentication
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject CustomAuthStateProvider CustomAuthStateProvider
+
+<CascadingValue Value="this">
+    <!-- Top Navbar -->
+
+    <nav class="border-gray-200 bg-blue-600 dark:bg-gray-900">
+        <div class="mx-auto flex max-w-screen-xl flex-wrap items-center justify-between p-4">
+            <!-- Logo and Branding -->
+            <a href="/" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <span class="self-center text-2xl font-semibold whitespace-nowrap text-white">Halal Product Evaluation</span>
+            </a>
+
+            <!-- Mobile Hamburger Button -->
+            <div class="flex items-center md:hidden">
+                <button @onclick="ToggleMobileMenu" class="text-white focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Navbar Links (hidden on mobile) -->
+            <div class="hidden items-center space-x-6 md:flex rtl:space-x-reverse">
+                <a href="tel:5554121234" class="text-sm text-white hover:underline">(555) 412-1234</a>
+                <AuthorizeView>
+                    <Authorized Context="authContext1">
+                        <div class="flex items-center space-x-3">
+                            <div class="border-2 flex h-12 w-12 items-center justify-center rounded-full border-white bg-gray-500 text-white">
+                                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 11c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
+                                </svg>
+                            </div>
+                            <a href="/">
+                                <div class="flex flex-col">
+                                    <span class="text-sm text-white">My Account</span>
+                                    <span class="text-lg font-bold text-white">@authContext1.User.Identity?.Name</span>
+                                </div>
+                            </a>
+                            <button @onclick="Logout" class="ml-4 text-white hover:underline">Logout</button>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="flex space-x-4">
+                            <a href="/login" class="text-white hover:underline">Login</a>
+                            <a href="/register" class="text-white hover:underline">Register</a>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+
+        <!-- Mobile Navbar Menu (hidden by default) -->
+        <div class="bg-gray-900 text-white md:hidden" style="display: @(IsMobileMenuOpen ? "block" : "none")">
+            <a href="tel:5554121234" class="block px-4 py-2 text-sm">Call Us: (555) 412-1234</a>
+            <AuthorizeView>
+                <Authorized Context="authContext2">
+                    <a href="/user/my-requests">
+                        <div class="px-4 py-2">
+                            <span class="text-sm">My Account</span><br />
+                            <span class="text-lg font-bold">@authContext2.User.Identity?.Name</span>
+                        </div>
+                    </a>
+                    <button @onclick="Logout" class="block w-full px-4 py-2 text-left text-sm">Logout</button>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/login" class="block px-4 py-2 text-sm">Login</a>
+                    <a href="/register" class="block px-4 py-2 text-sm">Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </nav>
+
+    <!-- Main Navbar -->
+    <header class="bg-blue-950">
+        <nav class="flex h-16 w-[90%] max-w-full items-center justify-between text-white">
+            <div class="flex items-center">
+                <!-- Drawer Toggle Button -->
+                <button @onclick="ToggleDrawer" class="rounded-md p-2 text-gray-900 hover:bg-teal-100 dark:text-white dark:hover:bg-gray-800">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <p class="font-bold text-white">ALL</p>
+            </div>
+            <div class="absolute top-[-100%] min-h-[55vh] w-full items-center bg-blue-950 px-5 font-bold transition-all duration-500 ease-in-out md:static md:min-h-fit md:w-auto">
+                <ul class="flex flex-col gap-8 md:flex-row md:items-center md:gap-[5vw]">
+                    <li><a class="hover:text-gray-400" href="/">Home</a></li>
+                    <li><a href="/products" class="hover:text-gray-400">Products</a></li>
+                    <li><a class="hover:text-gray-400" href="/Certification">Halal Certification</a></li>
+                    <li><a class="hover:text-gray-400" href="/Resource">Resources</a></li>
+                    <li><a class="hover:text-gray-400" href="/About">About Us</a></li>
+                    <li><a class="hover:text-gray-400" href="/Contact">Contact Us</a></li>
+                    <AuthorizeView Roles="Admin">
+                        <Authorized Context="adminContext">
+                            <li><a class="hover:text-gray-400" href="/admin/products">Admin Panel</a></li>
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView Roles="User">
+                        <Authorized Context="userContext">
+                            <li><a class="hover:text-gray-400" href="/user/my-requests">User Panel</a></li>
+                        </Authorized>
+                    </AuthorizeView>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Drawer Component -->
+    <div class="fixed top-0 left-0 z-40 h-screen w-64 overflow-y-auto bg-white p-4 transition-transform dark:bg-gray-800"
+         style="transform: @(IsDrawerOpen ? "translateX(0)" : "translateX(-100%)")">
+        <h5 class="text-base font-semibold text-gray-500 uppercase dark:text-gray-400">Menu</h5>
+        <button type="button" @onclick="ToggleDrawer" class="bg-transparent absolute end-2.5 top-2.5 inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white">
+            <svg class="h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+            </svg>
+            <span class="sr-only">Close menu</span>
+        </button>
+        <ul class="space-y-2 font-medium">
+            <li><a href="/" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Home</span></a></li>
+            <li><a href="/products" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Explore</span></a></li>
+            <li><a href="/Certification" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Halal Certification</span></a></li>
+            <li><a href="/About" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">About Us</span></a></li>
+            <li><a href="/Contact" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Contact Us</span></a></li>
+
+            <AuthorizeView>
+                <Authorized Context="drawerAuthContext">
+                    <AuthorizeView Roles="Admin">
+                        <Authorized Context="drawerAdminContext">
+                            <li><a href="/admin/products" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Admin Panel</span></a></li>
+                        </Authorized>
+                    </AuthorizeView>
+                    <AuthorizeView Roles="User">
+                        <Authorized Context="drawerUserContext">
+                            <li><a href="/user-panel" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">User Panel</span></a></li>
+                        </Authorized>
+                    </AuthorizeView>
+                    <li>
+                        <button @onclick="Logout" class="group flex w-full items-center rounded-lg p-2 text-left text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">
+                            <span class="ms-3">Logout</span>
+                        </button>
+                    </li>
+                </Authorized>
+                <NotAuthorized>
+                    <li><a href="/login" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Login</span></a></li>
+                    <li><a href="/register" class="group flex items-center rounded-lg p-2 text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"><span class="ms-3">Register</span></a></li>
+                </NotAuthorized>
+            </AuthorizeView>
+        </ul>
+    </div>
+</CascadingValue>
+@code {
+    private bool IsMobileMenuOpen = false;
+    private bool IsDrawerOpen = false;
+    [Parameter] public List<string> UserRoles { get; set; } = new List<string>();
+
+    private void ToggleMobileMenu()
+    {
+        IsMobileMenuOpen = !IsMobileMenuOpen;
+    }
+
+    private void ToggleDrawer()
+    {
+        IsDrawerOpen = !IsDrawerOpen;
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            await CustomAuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            // Optionally show error to user
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+    }
+}

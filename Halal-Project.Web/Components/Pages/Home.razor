@@ -1,0 +1,219 @@
+﻿@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>Home</PageTitle>
+
+<body class="bg-gray-100">
+    <section class="relative h-screen w-full bg-cover bg-center" style="background-image: url('/Assets/hero.jpg');">
+        <!-- Overlay for text contrast -->
+        <div class="px-4 py-16 text-white container relative z-10 mx-auto flex h-full items-center justify-center text-center">
+            <section class="mb-8 px-4 w-full lg:w-1/2 lg:mb-0">
+                <div class="bg-white p-8 rounded-lg shadow-lg transition-shadow duration-300 hover:shadow-xl">
+                    <h1 class="mb-6 text-gray-900 text-5xl font-extrabold tracking-tight">
+                        Discover the Halal Status of Food Products
+                    </h1>
+                    <p class="mb-8 text-gray-700 text-lg">
+                        Empowering consumers to make informed choices by providing real-time halal compliance details for food products and ingredients.
+                    </p>
+                    <form @onsubmit="HandleSearchSubmit" class="w-full">
+                        <div class="gap-2 flex flex-col sm:flex-row">
+                            <div class="relative flex-grow">
+                                <input type="search"
+                                       id="search-dropdown"
+                                       @bind="searchQuery"
+                                       class="border-gray-300 bg-gray-50 p-3 w-full rounded-lg border text-sm focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Search by Product Name or Category..."
+                                       required />
+                            </div>
+                            <button type="submit"
+                                    class="bg-blue-900 p-3 text-white flex items-center justify-center rounded-lg text-sm font-medium transition-colors duration-300 hover:bg-blue-950">
+                                <svg class="mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 19l-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
+                                </svg>
+                                Search
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <!-- Main Content Section -->
+    <section class="px-6 py-12 md:px-12">
+        <div class="mx-auto max-w-screen-xl text-center">
+            <h2 class="mb-6 text-3xl font-semibold">Explore Our Features</h2>
+            <div class="gap-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="bg-blue-200 p-4 rounded-lg shadow-lg">
+                    <a href="certifications.html">
+                        <h3 class="mb-4 text-xl font-semibold">Halal Certification</h3>
+                        <p class="text-gray-700">Learn more about the halal certification process for food and products.</p>
+                    </a>
+                </div>
+                <div class="bg-blue-200 p-4 rounded-lg shadow-lg">
+                    <a href="product.html">
+                        <h3 class="mb-4 text-xl font-semibold">Product Evaluation</h3>
+                        <p class="text-gray-700">Evaluate the halal status of different products using our platform.</p>
+                    </a>
+                </div>
+                <div class="bg-blue-200 p-4 rounded-lg shadow-lg">
+                    <a href="resource.html">
+                        <h3 class="mb-4 text-xl font-semibold">Educational Resources</h3>
+                        <p class="text-gray-700">Access guides and educational materials on halal practices and standards.</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Section -->
+    <section class="px-6 py-12 md:px-12">
+        <div class="mx-auto max-w-screen-xl text-center">
+            <h2 class="mb-6 text-3xl font-semibold">Explore Halal Categories</h2>
+            <div class="gap-8 grid grid-cols-1 md:grid-cols-2">
+                <!-- Halal Products -->
+                <div class="bg-white p-4 mx-auto max-w-lg rounded-lg shadow-lg dark:bg-gray-800 dark:text-white">
+                    <img src="/Assets/Products.webp" alt="Halal Products" class="mb-4 h-48 w-full rounded-lg object-cover">
+                    <h3 class="mb-2 text-xl font-semibold">Halal Products</h3>
+                    <p class="mb-4">Check halal status and ingredient details for various products.</p>
+                    <a href="product.html" class="text-blue-500 hover:underline">Explore Products</a>
+                </div>
+                <!-- Halal Ingredients -->
+                <div class="bg-white p-4 mx-auto max-w-lg rounded-lg shadow-lg dark:bg-gray-800 dark:text-white">
+                    <img src="/Assets/Ingredeie.webp" alt="Halal Ingredients" class="mb-4 h-48 w-full rounded-lg object-cover">
+                    <h3 class="mb-2 text-xl font-semibold">Halal Ingredients</h3>
+                    <p class="mb-4">Learn about permissible and non-permissible ingredients and their halal status.</p>
+                    <a href="ingredient.html" class="text-blue-500 hover:underline">Explore Ingredients</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="flex min-h-screen items-center justify-center">
+            <div class="w-full max-w-7xl">
+                <h2 class="mb-4 text-center text-2xl font-bold">Featured Products</h2>
+                <!-- Slider Wrapper -->
+                <div class="relative">
+                    <!-- Left Arrow -->
+                    <button id="prevButton" class="-translate-y-1/2 left-0 h-10 w-10 bg-gray-800 text-white absolute top-1/2 z-10 flex transform items-center justify-center rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <!-- Product Slider -->
+                    <div id="productSlider" class="slider-container gap-4 flex overflow-hidden scroll-smooth">
+                        <!-- Product Card -->
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://www.abelandcole.co.uk/media/2287_37128_m.jpg" alt="Product 1" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Organic Olive Oil</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="/Assets/snack1.jpeg" alt="Product 2" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Gelatin Snacks</h3>
+                            <p class="mb-2">Status: <span class="text-red-600 font-bold">Haram</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://images.albertsons-media.com/is/image/ABS/960152369-ECOM?$ng-ecom-pdp-mobile$&defaultImage=Not_Available" alt="Product 3" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Premium Chicken Breast</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://meridianfarmmarket.ca/cdn/shop/products/blue-diamond-almond-breeze-original-946ml.jpg?v=1655857634" alt="Product 5" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Almond Milk</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://media.naheed.pk/catalog/product/cache/49dcd5d85f0fa4d590e132d0368d8132/1/2/1269761_lays_salt-30.jpg" alt="Product 7" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Lays Classic Chips</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <NavLink to="detail" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">
+                                Learn More
+                            </NavLink>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://springs.com.pk/cdn/shop/files/8691216020627.jpg?v=1714802904" alt="Product 8" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Haribo Gold Bears</h3>
+                            <p class="mb-2">Status: <span class="text-red-600 font-bold">Haram</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://springs.com.pk/cdn/shop/files/CDM-36G.jpg?v=1709882886" alt="Product 9" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Cadbury Dairy Milk</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://jodiabaazar.com/cdn/shop/products/71V9hkFoitL._SL1500.jpg?v=1653597262" alt="Product 10" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Pringles Original</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                        <div class="w-64 bg-blue-950 p-4 text-white flex-shrink-0 rounded-2xl shadow-lg transition-transform duration-300 hover:scale-105">
+                            <img src="https://hopepharmacy.pk/cdn/shop/products/30_2e5b1e27-6a8e-4faa-b762-91a4690f88d4.jpg?v=1626252940" alt="Product 11" class="mb-4 h-40 w-full rounded-xl object-cover">
+                            <h3 class="text-lg font-semibold">Nestle KitKat</h3>
+                            <p class="mb-2">Status: <span class="text-green-600 font-bold">Halal</span></p>
+                            <button class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700">Learn More</button>
+                        </div>
+                    </div>
+                    <!-- Right Arrow -->
+                    <button id="nextButton" class="-translate-y-1/2 right-0 h-10 w-10 bg-gray-800 text-white absolute top-1/2 z-10 flex transform items-center justify-center rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- View More Products Button -->
+                <div class="mt-6 text-center">
+                    <a href="/ProductDisplay" class="bg-blue-950 px-6 py-2 text-white inline-block rounded-lg hover:bg-blue-900">
+                        View More Products
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What Our Users Say Section -->
+    <section class="mb-10 py-2">
+        <div class="container mx-auto text-center">
+            <h2 class="mb-8 text-blue-950 text-3xl font-semibold">What Our Users Say?</h2>
+            <div class="gap-8 flex flex-wrap justify-center">
+                <div class="bg-blue-950 p-6 w-full rounded-lg shadow-lg sm:w-1/2 md:w-1/3">
+                    <p class="text-white">"I love how easy it is to find halal-certified products! This platform gives me confidence in my choices."</p>
+                    <span class="mt-4 text-gray-500 block">- Ahmed R.</span>
+                </div>
+                <div class="bg-blue-950 p-6 w-full rounded-lg shadow-lg sm:w-1/2 md:w-1/3">
+                    <p class="text-white">"A game-changer for halal consumers! I can easily check product ingredients and certifications."</p>
+                    <span class="mt-4 text-gray-500 block">- Maria S.</span>
+                </div>
+                <div class="bg-blue-950 p-6 w-full rounded-lg shadow-lg sm:w-1/2 md:w-1/3">
+                    <p class="text-white">"Finally, a trustworthy platform that makes it so simple to evaluate whether products meet halal standards!"</p>
+                    <span class="mt-4 text-gray-500 block">- Imran A.</span>
+                </div>
+            </div>
+            <div class="mt-6 text-center">
+                <a href="/Review" class="border-gray-300 bg-blue-900 px-6 py-2 text-white inline-block rounded-lg border hover:bg-bg-blue-500">
+                    View More
+                </a>
+            </div>
+        </div>
+    </section>
+</body>
+
+@code {
+    private string searchQuery = string.Empty;
+
+    private void HandleSearchSubmit()
+    {
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            var encodedQuery = Uri.EscapeDataString(searchQuery.Trim());
+            Navigation.NavigateTo($"/products?search={encodedQuery}");
+        }
+    }
+}
